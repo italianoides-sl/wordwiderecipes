@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { Content } from '@/lib/db/schema';
+import AdUnit from '@/components/ui/AdUnit';
 
 const JUMP_LINKS = [
   { id: 'sec-ingredientes', label: 'Ingredientes' },
@@ -174,6 +175,7 @@ export default function Sidebar({ content }: { content: Content }) {
         )}
 
         <Newsletter />
+        <AdUnit slot="1122334455" format="vertical" style={{ marginTop: '24px' }} />
       </div>
     </aside>
   );

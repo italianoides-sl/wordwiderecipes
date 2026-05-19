@@ -1,0 +1,35 @@
+name: Daily Content Generation
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # 08:00 Madrid (UTC+1)
+  workflow_dispatch:       # también manual desde GitHub
+
+jobs:
+  generate-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Generate daily content
+        run: |
+          echo "🚀 Generando contenido diario..."
+          curl -X GET "${{ secrets.BASE_URL }}/api/cron/daily-content" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 1800 \
+            --retry 3 \
+            --retry-delay 60 \
+            -v
+          echo "✅ Hecho"
+
+      - name: Update homepage
+        run: |
+          curl -X GET "${{ secrets.BASE_URL }}/api/cron/update-homepage" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 120
+
+      - name: Update sitemaps
+        run: |
+          curl -X GET "${{ secrets.BASE_URL }}/api/cron/update-sitemaps" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 120

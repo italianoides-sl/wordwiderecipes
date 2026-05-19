@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import ContentDetail from '@/components/content/ContentDetail';
 import { countryFromParam } from '@/lib/cuisine/atlas';
-import { getContentByFilter, getContentBySlugFallback, getRelatedContentForContent } from '@/lib/db/queries';
+import { getContentByFilter, getContentBySlugOnly, getRelatedContentForContent } from '@/lib/db/queries';
 import { withDbFallback } from '@/lib/db/safe-query';
 import { buildMetadata, buildPageMetadata } from '@/lib/seo/metadata';
 import { contentHref } from '@/lib/content/routes';
@@ -11,11 +11,10 @@ import type { Locale } from '@/lib/db/schema';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { country: string } }) {
-  const locale = (headers().get('x-locale') ?? 'es') as Locale;
   const country = countryFromParam(params.country);
 
   if (!country) {
-    const content = await getContentBySlugFallback(params.country, locale, 'cuisine').catch(() => null);
+    const content = await getContentBySlugOnly(params.country).catch(() => null);
     if (content) return buildMetadata(content);
     return buildPageMetadata({
       title: 'Cocinas del mundo | WorldWideRecipes',
@@ -36,7 +35,7 @@ export default async function CuisinePage({ params }: { params: { country: strin
   const country = countryFromParam(params.country);
 
   if (!country) {
-    const content = await getContentBySlugFallback(params.country, locale, 'cuisine').catch(() => null);
+    const content = await getContentBySlugOnly(params.country).catch(() => null);
     if (!content) redirect('/recipes');
     const related = await getRelatedContentForContent(content).catch(() => []);
     return <ContentDetail content={content} related={related} />;

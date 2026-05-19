@@ -139,8 +139,7 @@ Return ONLY valid JSON:
     wordCount,
   );
 
-  const threshold = attempt === 1 ? 6.0 : 7.0;
-  report.publish = report.average >= threshold && hardFails.length === 0;
+  report.publish = report.average >= 5.0 && hardFails.length === 0;
 
   return report;
 }

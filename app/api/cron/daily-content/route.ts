@@ -93,7 +93,7 @@ Return a JSON object with this exact structure:
   ]
 }
 The trends array must contain exactly 12 items.
-    `, 3, { maxTokens: 1024 });
+    `, 3, { maxTokens: 8192 });
 
     const trends = Array.isArray(trendsResponse)
       ? trendsResponse

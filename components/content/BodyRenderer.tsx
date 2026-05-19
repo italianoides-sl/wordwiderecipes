@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import type { AffiliateLinkRecord, Content } from '@/lib/db/schema';
+import AdUnit from '@/components/ui/AdUnit';
 
 function text(value: unknown): string {
   if (!value) return '';
@@ -133,6 +134,7 @@ function RecipeBody({ content }: { content: Content }) {
           </ul>
         </section>
       ) : null}
+      <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
       {steps.length ? (
         <section className="body-section">
           <h2>Paso a paso</h2>
@@ -145,7 +147,12 @@ function RecipeBody({ content }: { content: Content }) {
                   {step.tip ? <small>{text(step.tip)}</small> : null}
                   {step.sensory_cue ? <small>{text(step.sensory_cue)}</small> : null}
                 </li>
-                {index === 3 ? <li className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></li> : null}
+                {index === 3 ? (
+                  <Fragment key={`ad-step-${index}`}>
+                    <li className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></li>
+                    <li className="body-ad-item"><AdUnit slot="0987654321" format="auto" /></li>
+                  </Fragment>
+                ) : null}
               </Fragment>
             ))}
           </ol>
@@ -188,6 +195,7 @@ function TechniqueBody({ content }: { content: Content }) {
           </div>
         </section>
       ) : null}
+      <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
       {body.before_you_start ? <section className="quick-answer-box"><h2>Antes de empezar</h2><p>{text(body.before_you_start)}</p></section> : null}
       {steps.length ? (
         <section className="body-section">
@@ -237,6 +245,14 @@ function IngredientBody({ content }: { content: Content }) {
                 ))}
               </tbody></table>
             </section>
+          );
+        }
+        if (key === 'how_to_buy') {
+          return (
+            <Fragment key={key}>
+              <GenericField name={key} value={body[key]} />
+              <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
+            </Fragment>
           );
         }
         return <GenericField key={key} name={key} value={body[key]} />;

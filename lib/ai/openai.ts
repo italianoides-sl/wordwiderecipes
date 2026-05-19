@@ -9,7 +9,9 @@ type GenerateJSONOptions = {
   temperature?: number;
 };
 
-export async function generateJSON<T>(prompt: string, retries = 3, options: GenerateJSONOptions = {}): Promise<T> {
+export async function generateJSON<T>(prompt: string, retries = 2, options: GenerateJSONOptions = {}): Promise<T> {
+  const maxTokens = options.maxTokens ?? 8192;
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await client.chat.completions.create({
@@ -17,11 +19,25 @@ export async function generateJSON<T>(prompt: string, retries = 3, options: Gene
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
         temperature: options.temperature ?? 0.75,
-        max_tokens: options.maxTokens ?? 4096,
+        max_tokens: maxTokens,
+        seed: 42,
       });
-      const text = response.choices[0].message.content ?? '{}';
+
+      console.log('finish_reason:', response.choices[0].finish_reason);
+      console.log('tokens used:', response.usage);
+
+      const finishReason = response.choices[0].finish_reason;
+      if (finishReason === 'length') {
+        throw new Error('Response cut off — retrying');
+      }
+
+      const text = (response.choices[0].message.content ?? '{}')
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+
       return JSON.parse(text) as T;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (attempt < retries) {
         await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 3000));
         continue;
@@ -32,12 +48,12 @@ export async function generateJSON<T>(prompt: string, retries = 3, options: Gene
   throw new Error('generateJSON failed after all retries');
 }
 
-export async function generateText(prompt: string): Promise<string> {
+export async function generateText(prompt: string, maxTokens = 100): Promise<string> {
   const response = await client.chat.completions.create({
     model: process.env.AI_MODEL ?? 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.75,
-    max_tokens: 4096,
+    temperature: 0.7,
+    max_tokens: maxTokens,
   });
   return response.choices[0].message.content ?? '';
 }

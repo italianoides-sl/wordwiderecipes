@@ -34,14 +34,15 @@ export async function updateHomepageConfig(): Promise<void> {
   `);
 
   const terms = seasonalIngredientTerms(new Date().getMonth() + 1);
+  const likeTerms = terms.map((t) => `%${t}%`);
   const [featuredIngredient] = await db.execute<{ id: string }>(sql`
     select c.id
     from content c
     where c.status = 'published'
       and c.type in ('ingredient', 'spice')
       and (
-        c.title ilike any(${terms.map((term) => `%${term}%`)}::text[])
-        or c.slug ilike any(${terms.map((term) => `%${term}%`)}::text[])
+        ${sql.join(likeTerms.map((t) => sql`c.title ilike ${t}`), sql` or `)}
+        or ${sql.join(likeTerms.map((t) => sql`c.slug ilike ${t}`), sql` or `)}
       )
     order by c.published_at desc
     limit 1

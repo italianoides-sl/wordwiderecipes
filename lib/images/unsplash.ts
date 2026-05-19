@@ -128,12 +128,13 @@ export async function fetchArticleImages(options: {
   title?: string;
   body?: unknown;
   count?: number;
+  customQuery?: string;
 }): Promise<ContentImage[]> {
   const count = Math.max(2, options.count ?? 3);
   const images: ContentImage[] = [];
   const usedIds = new Set<string>();
 
-  const heroQuery = await generateImageSearchQuery({
+  const heroQuery = options.customQuery?.trim() || await generateImageSearchQuery({
     title: options.title ?? '',
     contentType: options.contentType,
     cuisine: options.cuisine ?? '',

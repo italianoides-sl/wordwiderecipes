@@ -9,6 +9,7 @@ import {
   type Locale,
 } from '@/lib/db/schema';
 import { fetchArticleImages, type ContentImage } from '@/lib/images/unsplash';
+import { generateText } from '@/lib/ai/openai';
 import { indexUrl } from '@/lib/seo/google-indexing';
 import { updateHomepageConfig } from '@/lib/homepage/config';
 import { buildSchemas } from './schemas';
@@ -98,7 +99,7 @@ function draftToContentForSchemas(draft: ContentDraft): Content {
     title: draft.title,
     metaTitle: draft.metaTitle ?? null,
     metaDescription: draft.metaDescription ?? null,
-    canonicalUrl: draft.canonicalUrl ?? `${getBaseUrl()}/${draft.locale}/${draft.type}/${draft.slug}`,
+    canonicalUrl: draft.canonicalUrl ?? `${getBaseUrl()}/${draft.type}/${draft.slug}`,
     quickAnswer: draft.quickAnswer ?? null,
     definition: draft.definition ?? null,
     keyFacts: draft.keyFacts ?? null,
@@ -223,10 +224,14 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
 
     let images: ContentImage[] = [];
     try {
+      const imageQuery = await generateText(
+        `4-word English Unsplash search query for: "${draft.title}" (${draft.cuisine ?? config.contentType} cuisine)\nExamples: "tacos al pastor street", "sous vide steak plated"\nReturn ONLY the query, nothing else.`,
+      );
       images = await fetchArticleImages({
         contentType: config.contentType,
         cuisine: draft.cuisine,
         title: draft.title,
+        customQuery: imageQuery.trim(),
         count: 3,
       });
       await updateJob(job.id, { image_generated: true });
@@ -261,12 +266,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
     const slugExists = await db
       .select({ id: content.id })
       .from(content)
-      .where(
-        and(
-          eq(content.slug, enrichedDraft.slug),
-          eq(content.locale, config.locale),
-        ),
-      )
+      .where(eq(content.slug, enrichedDraft.slug))
       .limit(1);
 
     const finalDraft: ContentDraft = {
@@ -274,8 +274,15 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       slug: slugExists.length > 0 ? `${enrichedDraft.slug}-${config.locale}-${Date.now()}` : enrichedDraft.slug,
     };
 
+    const difficultyMap: Record<string, string> = {
+      'fácil': 'easy', 'facil': 'easy', 'easy': 'easy', 'baja': 'easy', 'bajo': 'easy',
+      'medio': 'medium', 'media': 'medium', 'moderate': 'medium', 'medium': 'medium',
+      'difícil': 'hard', 'dificil': 'hard', 'hard': 'hard', 'difficult': 'hard', 'alta': 'hard', 'alto': 'hard',
+    };
+    finalDraft.difficulty = (difficultyMap[finalDraft.difficulty?.toLowerCase()?.trim() ?? ''] ?? 'medium') as ContentDraft['difficulty'];
+
     const schemas = buildSchemas(draftToContentForSchemas(finalDraft));
-    const url = `${getBaseUrl()}/${config.locale}/${config.contentType}/${finalDraft.slug}`;
+    const url = `${getBaseUrl()}/${config.contentType}/${finalDraft.slug}`;
 
     const [inserted] = await db
       .insert(content)

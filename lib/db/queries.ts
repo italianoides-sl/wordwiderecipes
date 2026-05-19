@@ -73,6 +73,15 @@ export async function getContentBySlugFallback(slug: string, locale: Locale, typ
   return null;
 }
 
+export async function getContentBySlugOnly(slug: string) {
+  const [row] = await db
+    .select()
+    .from(content)
+    .where(and(eq(content.slug, slug), eq(content.status, 'published')))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getRelatedContent(slug: string, locale: Locale, limit = 6) {
   const current = await getContentBySlug(slug, locale);
   if (!current?.relatedSlugs?.length) return [];
