@@ -4,6 +4,46 @@ import CookieConsent from '@/components/ui/CookieConsent';
 import './globals.css';
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
+const siteStructuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${baseUrl}/#organization`,
+      name: 'WorldWideRecipes',
+      url: baseUrl,
+      logo: `${baseUrl}/logo.png`,
+      sameAs: [tiktokUrl],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        email: 'contact@worldwiderecipes.app',
+        contactType: 'editorial',
+      },
+      knowsAbout: [
+        'recetas internacionales',
+        'técnicas de cocina',
+        'ingredientes regionales',
+        'gastronomía mexicana',
+        'gastronomía española',
+        'cultura alimentaria',
+      ],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${baseUrl}/#website`,
+      url: baseUrl,
+      name: 'WorldWideRecipes',
+      publisher: { '@id': `${baseUrl}/#organization` },
+      inLanguage: ['es', 'es-MX', 'en'],
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${baseUrl}/es/search?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -47,6 +87,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-WBZ5KRXW');`}
         </Script>
+        <Script
+          id="site-structured-data"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteStructuredData) }}
+        />
         <Script async src="https://www.googletagmanager.com/gtag/js?id=G-T70F1L4P1Y" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || [];

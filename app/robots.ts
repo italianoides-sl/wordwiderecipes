@@ -8,5 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       disallow: '/api/',
     },
     sitemap: 'https://worldwiderecipes.app/sitemap.xml',
+    host: 'https://worldwiderecipes.app',
   };
 }

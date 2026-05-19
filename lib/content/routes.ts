@@ -57,8 +57,8 @@ const URL_TO_DIFFICULTY: Record<string, Difficulty> = {
   dificil: 'hard',
 };
 
-export function contentHref(item: { type: string; slug: string }) {
-  return `/${item.type}/${item.slug}`;
+export function contentHref(item: { locale?: string | null; type: string; slug: string }) {
+  return item.locale ? `/${item.locale}/${item.type}/${item.slug}` : `/${item.type}/${item.slug}`;
 }
 
 export function typeToFilterSegment(type: ContentType) {
