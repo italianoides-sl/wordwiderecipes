@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import CookieConsent from '@/components/ui/CookieConsent';
 import './globals.css';
 
@@ -118,7 +120,11 @@ gtag('config', 'G-T70F1L4P1Y');`}
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        {children}
+        <div className="site-shell">
+          <Header />
+          {children}
+          <Footer />
+        </div>
         <CookieConsent />
       </body>
     </html>
