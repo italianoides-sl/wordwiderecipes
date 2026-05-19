@@ -30,7 +30,7 @@ export default function TikTokBand() {
         </div>
 
         <div className="da-tt-cta-wrap">
-          <span className="da-tt-followers">+30K seguidores</span>
+          <span className="da-tt-followers">@tuvirtualchef</span>
           <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="da-btn da-btn--tt">
             <span className="da-btn-icon">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

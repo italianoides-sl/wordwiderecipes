@@ -18,26 +18,20 @@ const CATEGORY_PRIORITY: Record<string, number> = {
   book: 5,
 };
 
-function flattenText(value: unknown): string[] {
-  if (!value) return [];
-  if (typeof value === 'string') return [value.toLowerCase()];
-  if (Array.isArray(value)) return value.flatMap(flattenText);
-  if (typeof value === 'object') return Object.values(value).flatMap(flattenText);
-  return [String(value).toLowerCase()];
-}
+function extractIngredientNames(content: ContentDraft): string[] {
+  const ingredients = Array.isArray(content.body?.ingredients) ? content.body.ingredients : [];
 
-function extractKeywords(content: ContentDraft) {
-  const body = content.body ?? {};
-  const terms = [
-    ...flattenText(body.ingredients),
-    ...flattenText(body.tools),
-    ...flattenText(body.equipment),
-    ...flattenText(body.recommendations),
-    content.title.toLowerCase(),
-    content.cuisine?.toLowerCase() ?? '',
-  ];
-
-  return [...new Set(terms.flatMap((term) => term.split(/[,;|]/).map((part) => part.trim())).filter(Boolean))];
+  return [
+    ...new Set(
+      ingredients
+        .map((ingredient) => {
+          if (!ingredient || typeof ingredient !== 'object') return null;
+          const name = (ingredient as { name?: unknown }).name;
+          return typeof name === 'string' ? name.toLowerCase().trim() : null;
+        })
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ].slice(0, 10);
 }
 
 export function buildAffiliateUrl(asin: string, market: AffiliateMarket): string {
@@ -58,42 +52,51 @@ export async function injectAffiliateLinks(
   contentDraft: ContentDraft,
   market: AffiliateMarket,
 ): Promise<ContentDraft> {
-  const keywords = extractKeywords(contentDraft);
-  if (!keywords.length) return { ...contentDraft, affiliateLinks: contentDraft.affiliateLinks ?? [] };
+  try {
+    const ingredientNames = extractIngredientNames(contentDraft);
+    if (!ingredientNames.length) return { ...contentDraft, affiliateLinks: contentDraft.affiliateLinks ?? [] };
 
-  const products = await db
-    .select()
-    .from(affiliateProducts)
-    .where(
-      and(
-        eq(affiliateProducts.active, true),
-        sql`${affiliateProducts.matchKeywords} && ${keywords}::text[]`,
-      ),
-    );
+    const products = await db
+      .select()
+      .from(affiliateProducts)
+      .where(
+        and(
+          eq(affiliateProducts.active, true),
+          sql`${affiliateProducts.matchKeywords} && ${ingredientNames}::text[]`,
+        ),
+      )
+      .limit(5);
 
-  const marketConfig = MARKET_CONFIG[market];
-  const seenAsins = new Set<string>();
-  const links = products
-    .sort((a, b) => (CATEGORY_PRIORITY[a.category ?? 'book'] ?? 99) - (CATEGORY_PRIORITY[b.category ?? 'book'] ?? 99))
-    .flatMap((product) => {
-      const asin = product[marketConfig.asinField] ?? product.asinGlobal;
-      if (!asin || seenAsins.has(asin)) return [];
-      seenAsins.add(asin);
+    const marketConfig = MARKET_CONFIG[market];
+    const seenAsins = new Set<string>();
+    const links = products
+      .sort((a, b) => (CATEGORY_PRIORITY[a.category ?? 'book'] ?? 99) - (CATEGORY_PRIORITY[b.category ?? 'book'] ?? 99))
+      .flatMap((product) => {
+        const asin = product[marketConfig.asinField] ?? product.asinGlobal;
+        if (!asin || seenAsins.has(asin)) return [];
+        seenAsins.add(asin);
 
-      return [{
-        label: product.nameEs ?? product.nameMx ?? product.name,
-        asin,
-        url: buildAffiliateUrl(asin, market),
-        market,
-        type: product.category ?? undefined,
-        position: product.category === 'utensil' || product.category === 'appliance' ? 'tools' : 'ingredients',
-        productId: product.id,
-      }];
-    })
-    .slice(0, Number(process.env.MAX_AFFILIATE_LINKS_PER_PAGE ?? 5));
+        return [{
+          label: product.nameEs ?? product.nameMx ?? product.name,
+          asin,
+          url: buildAffiliateUrl(asin, market),
+          market,
+          type: product.category ?? undefined,
+          position: product.category === 'utensil' || product.category === 'appliance' ? 'tools' : 'ingredients',
+          productId: product.id,
+        }];
+      })
+      .slice(0, Number(process.env.MAX_AFFILIATE_LINKS_PER_PAGE ?? 5));
 
-  return {
-    ...contentDraft,
-    affiliateLinks: links,
-  };
+    return {
+      ...contentDraft,
+      affiliateLinks: links,
+    };
+  } catch (error) {
+    console.error('Affiliate injection failed; publishing without affiliate links:', error);
+    return {
+      ...contentDraft,
+      affiliateLinks: contentDraft.affiliateLinks ?? [],
+    };
+  }
 }

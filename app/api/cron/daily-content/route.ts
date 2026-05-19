@@ -1,5 +1,5 @@
-import { gte } from 'drizzle-orm';
-import { generateJSON } from '@/lib/ai/gemini';
+import { desc } from 'drizzle-orm';
+import { generateJSON } from '@/lib/ai/openai';
 import { runContentPipeline } from '@/lib/content/pipeline';
 import { content, db, trendingTopics } from '@/lib/db/schema';
 import type { ContentType, Locale } from '@/lib/db/schema';
@@ -15,11 +15,26 @@ type Trend = {
   difficulty_to_rank: 'low' | 'medium' | 'high';
 };
 
+type TrendResponse = {
+  trends?: Trend[];
+  topics?: Trend[];
+  items?: Trend[];
+};
+
 const AFFILIATE_SCORE: Record<Trend['affiliate_potential'], number> = {
   high: 3,
   medium: 2,
   low: 1,
 };
+
+function normalizeSlug(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 export async function GET(req: Request) {
   const auth = req.headers.get('Authorization');
@@ -31,7 +46,18 @@ export async function GET(req: Request) {
   const results = { published: 0, failed: 0, skipped: 0, jobs: [] as Array<Record<string, unknown>> };
 
   try {
-    const trends = await generateJSON<Trend[]>(`
+    const recentTopics = await db
+      .select({ topic: trendingTopics.topic })
+      .from(trendingTopics)
+      .orderBy(desc(trendingTopics.detectedAt))
+      .limit(100);
+
+    const recentTopicsList = recentTopics
+      .map((row) => row.topic)
+      .filter(Boolean)
+      .join(', ');
+
+    const trendsResponse = await generateJSON<Trend[] | TrendResponse>(`
 You are a culinary trend analyst for Spain and Latin America.
 Today: ${new Date().toISOString().split('T')[0]}
 Primary market: Mexico. Secondary: Spain.
@@ -46,31 +72,95 @@ Rules:
 - No generic topics. Only specific, interesting angles.
 - Must have affiliate potential (links to Amazon products naturally)
 
-Return ONLY valid JSON array of 12 objects:
-[{
-  "topic": "specific descriptive name",
-  "content_type": "recipe|technique|ingredient|guide|spice|cuisine",
-  "locale_primary": "es-mx|es",
-  "why_trending": "brief reason",
-  "unique_angle": "what makes our version different",
-  "affiliate_potential": "high|medium|low",
-  "tiktok_hashtags": ["#tag"],
-  "difficulty_to_rank": "low|medium|high"
-}]
-    `);
+IMPORTANT - DO NOT suggest these topics, they are already published:
+${recentTopicsList || 'No previous topics yet.'}
 
-    const recentTitles = await db
-      .select({ title: content.title })
-      .from(content)
-      .where(gte(content.publishedAt, new Date(Date.now() - 30 * 24 * 3600 * 1000)));
+Generate topics that are completely different from the above list.
 
-    const recentSet = new Set(recentTitles.map((row) => row.title.toLowerCase()));
+Return a JSON object with this exact structure:
+{
+  "trends": [
+    {
+      "topic": "specific descriptive name",
+      "content_type": "recipe|technique|ingredient|guide|spice|cuisine",
+      "locale_primary": "es-mx|es",
+      "why_trending": "brief reason",
+      "unique_angle": "what makes our version different",
+      "affiliate_potential": "high|medium|low",
+      "tiktok_hashtags": ["#tag"],
+      "difficulty_to_rank": "low|medium|high"
+    }
+  ]
+}
+The trends array must contain exactly 12 items.
+    `, 3, { maxTokens: 1024 });
 
-    const filtered = trends.filter(
-      (trend) =>
-        !recentSet.has(trend.topic.toLowerCase()) &&
-        trend.difficulty_to_rank !== 'high',
-    );
+    const trends = Array.isArray(trendsResponse)
+      ? trendsResponse
+      : (trendsResponse.trends ?? trendsResponse.topics ?? trendsResponse.items ?? []);
+
+    if (!Array.isArray(trends) || trends.length === 0) {
+      throw new Error('No trends returned from AI');
+    }
+
+    const existingContent = await db
+      .select({
+        slug: content.slug,
+        title: content.title,
+        locale: content.locale,
+      })
+      .from(content);
+
+    const existingTopicsRows = await db
+      .select({
+        topic: trendingTopics.topic,
+        locale: trendingTopics.localePrimary,
+      })
+      .from(trendingTopics);
+
+    const existingSlugs = new Set(existingContent.map((row) => `${row.locale}:${row.slug}`));
+    const existingTopics = existingTopicsRows
+      .map((row) => ({
+        topic: row.topic?.toLowerCase().trim(),
+        locale: row.locale,
+      }))
+      .filter((row): row is { topic: string; locale: string } => Boolean(row.topic && row.locale));
+
+    function isTooSimilar(topic: string, locale: string): boolean {
+      const normalizedTopic = topic.toLowerCase().trim();
+
+      if (existingTopics.some((existing) => existing.locale === locale && existing.topic === normalizedTopic)) {
+        return true;
+      }
+
+      const topicWords = normalizedTopic.split(/\s+/).filter((word) => word.length > 4);
+      if (!topicWords.length) return false;
+
+      for (const existing of existingContent) {
+        if (existing.locale !== locale) continue;
+        const title = existing.title?.toLowerCase().trim();
+        if (!title) continue;
+        const matches = topicWords.filter((word) => title.includes(word));
+        if (matches.length >= 3) return true;
+      }
+
+      return false;
+    }
+
+    const uniqueTrends = trends.filter((trend) => !isTooSimilar(trend.topic, trend.locale_primary));
+
+    if (uniqueTrends.length === 0) {
+      return Response.json({
+        success: true,
+        message: 'All trends already published - no new content needed',
+        published: 0,
+      });
+    }
+
+    const filtered = uniqueTrends.filter((trend) => {
+      if (trend.difficulty_to_rank === 'high') return false;
+      return !existingSlugs.has(`${trend.locale_primary}:${normalizeSlug(trend.topic)}`);
+    });
 
     for (const trend of filtered) {
       await db
@@ -84,6 +174,7 @@ Return ONLY valid JSON array of 12 objects:
           affiliatePotential: trend.affiliate_potential,
           tiktokHashtags: trend.tiktok_hashtags,
           difficultyToRank: trend.difficulty_to_rank,
+          detectedDate: new Date().toISOString().split('T')[0],
           detectedAt: new Date(),
           selected: true,
         })

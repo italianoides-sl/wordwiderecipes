@@ -135,7 +135,7 @@ export default function Sidebar({ content }: { content: Content }) {
               </svg>
               Ver en TikTok
             </span>
-            <span className="sb-tt-views">+30K seguidores</span>
+            <span className="sb-tt-views">@tuvirtualchef</span>
           </div>
         </a>
 

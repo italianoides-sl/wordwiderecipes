@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
   content,
   db,
@@ -132,7 +132,7 @@ function draftToContentForSchemas(draft: ContentDraft): Content {
     faq: draft.faq ?? null,
     qualityScore: draft.qualityScore?.toFixed(1) ?? null,
     qualityDetails: draft.qualityDetails ?? null,
-    aiModel: draft.aiModel ?? 'gemini-1.5-flash',
+    aiModel: draft.aiModel ?? 'gpt-4o-mini',
     generationPromptVersion: draft.generationPromptVersion ?? null,
     humanReviewed: false,
     humanReviewedAt: null,
@@ -170,7 +170,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
     let quality: QualityReport | null = null;
     let attempts = 0;
 
-    while (attempts < 3) {
+    while (attempts < 2) {
       attempts += 1;
       await updateJob(job.id, { status: 'running', attempts });
 
@@ -184,18 +184,18 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
         });
       } catch (err) {
         await updateJob(job.id, {
-          status: attempts < 3 ? 'running' : 'failed',
+          status: attempts < 2 ? 'running' : 'failed',
           attempts,
           error_message: `Generation attempt ${attempts} failed: ${err}`,
-          completed_at: attempts >= 3 ? new Date().toISOString() : undefined,
+          completed_at: attempts >= 2 ? new Date().toISOString() : undefined,
           generation_ms: Date.now() - startedAt,
         });
-        if (attempts >= 3) return { success: false, error: 'Content generation failed' };
+        if (attempts >= 2) return { success: false, error: 'Content generation failed' };
         await sleep(2000);
         continue;
       }
 
-      quality = await validateContent(draft);
+      quality = await validateContent(draft, attempts);
       await updateJob(job.id, { quality_score: quality.average, attempts });
 
       if (quality.publish) break;
@@ -203,7 +203,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       console.log(`Attempt ${attempts} quality ${quality.average}/10 - retrying`);
       console.log('Issues:', quality.hard_fails, quality.improvements);
 
-      if (attempts >= 3) {
+      if (attempts >= 2) {
         await updateJob(job.id, {
           status: 'failed',
           error_message: `Quality too low after ${attempts} attempts: ${quality.average}/10`,
@@ -252,62 +252,78 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       ogImageUrl: images[0]?.url,
       qualityScore: quality.average,
       qualityDetails: quality.scores,
-      aiModel: 'gemini-1.5-flash',
+      aiModel: process.env.AI_MODEL ?? 'gpt-4o-mini',
       generationPromptVersion: config.promptVersion ?? process.env.CONTENT_PROMPT_VERSION ?? 'v1.0',
       wordCount,
       readingTimeMins: Math.ceil(wordCount / 200),
     };
 
-    const schemas = buildSchemas(draftToContentForSchemas(enrichedDraft));
-    const url = `${getBaseUrl()}/${config.locale}/${config.contentType}/${draft.slug}`;
+    const slugExists = await db
+      .select({ id: content.id })
+      .from(content)
+      .where(
+        and(
+          eq(content.slug, enrichedDraft.slug),
+          eq(content.locale, config.locale),
+        ),
+      )
+      .limit(1);
+
+    const finalDraft: ContentDraft = {
+      ...enrichedDraft,
+      slug: slugExists.length > 0 ? `${enrichedDraft.slug}-${config.locale}-${Date.now()}` : enrichedDraft.slug,
+    };
+
+    const schemas = buildSchemas(draftToContentForSchemas(finalDraft));
+    const url = `${getBaseUrl()}/${config.locale}/${config.contentType}/${finalDraft.slug}`;
 
     const [inserted] = await db
       .insert(content)
       .values({
-        slug: enrichedDraft.slug,
-        locale: enrichedDraft.locale,
-        type: enrichedDraft.type,
-        title: enrichedDraft.title,
-        metaTitle: enrichedDraft.metaTitle,
-        metaDescription: enrichedDraft.metaDescription,
+        slug: finalDraft.slug,
+        locale: finalDraft.locale,
+        type: finalDraft.type,
+        title: finalDraft.title,
+        metaTitle: finalDraft.metaTitle,
+        metaDescription: finalDraft.metaDescription,
         canonicalUrl: url,
-        quickAnswer: enrichedDraft.quickAnswer,
-        definition: enrichedDraft.definition,
-        keyFacts: enrichedDraft.keyFacts,
-        stepsSummary: enrichedDraft.stepsSummary,
-        authorEntity: enrichedDraft.authorEntity ?? 'WorldWideRecipes Editorial Team',
-        expertReviewed: enrichedDraft.expertReviewed ?? false,
-        primarySources: enrichedDraft.primarySources,
-        originalData: enrichedDraft.originalData,
-        entityMentions: enrichedDraft.entityMentions,
-        citationSummary: enrichedDraft.citationSummary,
-        body: enrichedDraft.body,
-        imageUrl: enrichedDraft.imageUrl,
-        imageAlt: enrichedDraft.imageAlt,
-        imageAttribution: enrichedDraft.imageAttribution,
-        ogImageUrl: enrichedDraft.ogImageUrl,
-        cuisine: enrichedDraft.cuisine,
-        category: enrichedDraft.category,
-        dietTags: enrichedDraft.dietTags,
-        difficulty: enrichedDraft.difficulty,
-        totalTimeMins: enrichedDraft.totalTimeMins,
-        season: enrichedDraft.season,
-        parentSlug: enrichedDraft.parentSlug,
-        tiktokHashtags: enrichedDraft.tiktokHashtags,
-        affiliateLinks: enrichedDraft.affiliateLinks,
+        quickAnswer: finalDraft.quickAnswer,
+        definition: finalDraft.definition,
+        keyFacts: finalDraft.keyFacts,
+        stepsSummary: finalDraft.stepsSummary,
+        authorEntity: finalDraft.authorEntity ?? 'WorldWideRecipes Editorial Team',
+        expertReviewed: finalDraft.expertReviewed ?? false,
+        primarySources: finalDraft.primarySources,
+        originalData: finalDraft.originalData,
+        entityMentions: finalDraft.entityMentions,
+        citationSummary: finalDraft.citationSummary,
+        body: finalDraft.body,
+        imageUrl: finalDraft.imageUrl,
+        imageAlt: finalDraft.imageAlt,
+        imageAttribution: finalDraft.imageAttribution,
+        ogImageUrl: finalDraft.ogImageUrl,
+        cuisine: finalDraft.cuisine,
+        category: finalDraft.category,
+        dietTags: finalDraft.dietTags,
+        difficulty: finalDraft.difficulty,
+        totalTimeMins: finalDraft.totalTimeMins,
+        season: finalDraft.season,
+        parentSlug: finalDraft.parentSlug,
+        tiktokHashtags: finalDraft.tiktokHashtags,
+        affiliateLinks: finalDraft.affiliateLinks,
         schemaRecipe: schemas.recipe ?? undefined,
         schemaHowto: schemas.howto ?? undefined,
         schemaArticle: schemas.article,
         schemaFaq: schemas.faq,
         schemaBreadcrumb: schemas.breadcrumb,
-        faq: enrichedDraft.faq,
+        faq: finalDraft.faq,
         qualityScore: quality.average.toFixed(1),
         qualityDetails: quality.scores,
-        aiModel: 'gemini-1.5-flash',
-        generationPromptVersion: enrichedDraft.generationPromptVersion,
+        aiModel: process.env.AI_MODEL ?? 'gpt-4o-mini',
+        generationPromptVersion: finalDraft.generationPromptVersion,
         wordCount,
         readingTimeMins: Math.ceil(wordCount / 200),
-        outboundLinkCount: enrichedDraft.outboundLinkCount,
+        outboundLinkCount: finalDraft.outboundLinkCount,
         status: 'published',
         publishedAt: new Date(),
         aiGenerated: true,
@@ -317,7 +333,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
     const contentId = inserted.id;
 
     try {
-      await computeInternalLinks(contentId, enrichedDraft.locale);
+      await computeInternalLinks(contentId, finalDraft.locale);
     } catch (err) {
       console.error('Internal links failed (non-blocking):', err);
     }
@@ -326,18 +342,18 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       .insert(sitemapIndex)
       .values({
         contentId,
-        sitemapFile: sitemapFileFor(enrichedDraft.type, enrichedDraft.locale),
+        sitemapFile: sitemapFileFor(finalDraft.type, finalDraft.locale),
         url,
-        priority: enrichedDraft.type === 'recipe' ? '0.8' : '0.7',
+        priority: finalDraft.type === 'recipe' ? '0.8' : '0.7',
         changefreq: 'weekly',
         lastmod: new Date(),
       })
       .onConflictDoUpdate({
         target: sitemapIndex.contentId,
         set: {
-          sitemapFile: sitemapFileFor(enrichedDraft.type, enrichedDraft.locale),
+          sitemapFile: sitemapFileFor(finalDraft.type, finalDraft.locale),
           url,
-          priority: enrichedDraft.type === 'recipe' ? '0.8' : '0.7',
+          priority: finalDraft.type === 'recipe' ? '0.8' : '0.7',
           changefreq: 'weekly',
           lastmod: new Date(),
         },
@@ -361,7 +377,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
           Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
         },
         body: JSON.stringify({
-          path: `/${config.locale}/${config.contentType}/${draft.slug}`,
+          path: `/${config.locale}/${config.contentType}/${finalDraft.slug}`,
           secret: process.env.REVALIDATE_SECRET,
         }),
       });

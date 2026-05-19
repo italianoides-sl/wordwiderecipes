@@ -1,8 +1,6 @@
 import Link from 'next/link';
 
-type FooterProps = { locale?: string };
-
-export default function Footer({ locale = 'es' }: FooterProps) {
+export default function Footer() {
   const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
 
   return (
@@ -24,20 +22,20 @@ export default function Footer({ locale = 'es' }: FooterProps) {
 
         <nav className="da-footer-col" aria-label="Navegar">
           <span className="da-footer-col-title">Navegar</span>
-          <Link href={`/${locale}`}>Inicio</Link>
-          <Link href={`/${locale}/recipes`}>Explorar</Link>
-          <Link href={`/${locale}/recipes/tipo/receta`}>Recetas</Link>
-          <Link href={`/${locale}/recipes/tipo/tecnica`}>Técnicas</Link>
-          <Link href={`/${locale}/recipes/tipo/ingrediente`}>Ingredientes</Link>
-          <Link href={`/${locale}/recipes/tipo/guia`}>Guías</Link>
+          <Link href="/">Inicio</Link>
+          <Link href="/recipes">Explorar</Link>
+          <Link href="/recipes/tipo/receta">Recetas</Link>
+          <Link href="/recipes/tipo/tecnica">Técnicas</Link>
+          <Link href="/recipes/tipo/ingrediente">Ingredientes</Link>
+          <Link href="/recipes/tipo/guia">Guías</Link>
         </nav>
 
         <nav className="da-footer-col" aria-label="Legal">
           <span className="da-footer-col-title">Legal</span>
-          <Link href={`/${locale}/privacy-policy`}>Privacidad</Link>
-          <Link href={`/${locale}/terms`}>Términos</Link>
-          <Link href={`/${locale}/about`}>Sobre nosotros</Link>
-          <Link href={`/${locale}/contact`}>Contacto</Link>
+          <Link href="/privacy-policy">Privacidad</Link>
+          <Link href="/terms">Términos</Link>
+          <Link href="/about">Sobre nosotros</Link>
+          <Link href="/contact">Contacto</Link>
         </nav>
       </div>
 
@@ -45,8 +43,7 @@ export default function Footer({ locale = 'es' }: FooterProps) {
         <p>© 2026 WorldWideRecipes · <a href="mailto:contact@worldwiderecipes.app">contact@worldwiderecipes.app</a></p>
         <p>worldwiderecipes.app participa en el Programa de Afiliados de Amazon Services LLC. Ganamos comisiones por compras realizadas a través de nuestros enlaces, sin coste adicional para ti.</p>
         <p>
-          Photos from <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a>
-          {' · '}Powered by <a href="https://deepmind.google/technologies/gemini/" target="_blank" rel="noopener noreferrer">Gemini AI</a>
+          Redactado con OpenAI · Fotos de <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a>
         </p>
       </div>
     </footer>

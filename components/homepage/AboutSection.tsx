@@ -1,4 +1,4 @@
-export default function AboutSection({ locale }: { locale: string }) {
+export default function AboutSection() {
   return (
     <section className="da-about">
       <div className="da-about-grid">
@@ -15,7 +15,7 @@ export default function AboutSection({ locale }: { locale: string }) {
             <strong>WorldWideRecipes</strong> nació en Ibiza de la mano de un chef profesional con pasión por la gastronomía de todos los rincones del mundo. Lo que empezó como un cuaderno de recetas se convirtió en un atlas culinario en español e inglés.
           </p>
           <p>
-            Cada artículo — receta, técnica, ingrediente o guía — está generado con <strong>Gemini AI</strong> y validado editorialmente para garantizar precisión, contexto histórico y criterio de cocina real.
+            Cada artículo — receta, técnica, ingrediente o guía — se redacta con asistencia de <strong>OpenAI</strong> y se valida editorialmente para garantizar precisión, contexto histórico y criterio de cocina real.
           </p>
           <p>
             También somos <strong>@tuvirtualchef</strong> en TikTok, donde publicamos foto-recetas de menos de un minuto: desliza, lee, cocina.
@@ -27,7 +27,7 @@ export default function AboutSection({ locale }: { locale: string }) {
           <div className="da-tags">
             <span className="da-tag"><span className="da-tag-flag">🇪🇸</span> Ibiza</span>
             <span className="da-tag"><span className="da-tag-flag">🌍</span> Gastronomía mundial</span>
-            <span className="da-tag"><span className="da-tag-flag">🤖</span> Gemini AI</span>
+            <span className="da-tag">OpenAI</span>
             <span className="da-tag"><span className="da-tag-flag">📱</span> @tuvirtualchef</span>
             <span className="da-tag da-tag--ghost">Español · English · Português</span>
           </div>

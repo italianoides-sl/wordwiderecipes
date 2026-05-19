@@ -66,6 +66,13 @@ export async function getContentBySlugAndType(slug: string, locale: Locale, type
   return row ?? null;
 }
 
+export async function getContentBySlugFallback(slug: string, locale: Locale, type: ContentType) {
+  const preferred = await getContentBySlugAndType(slug, locale, type);
+  if (preferred) return preferred;
+  if (locale !== 'es') return getContentBySlugAndType(slug, 'es', type);
+  return null;
+}
+
 export async function getRelatedContent(slug: string, locale: Locale, limit = 6) {
   const current = await getContentBySlug(slug, locale);
   if (!current?.relatedSlugs?.length) return [];

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export default function ExploreCta({ locale }: { locale: string }) {
+export default function ExploreCta() {
   return (
     <section className="da-explore-cta">
       <div className="da-cta-glow da-cta-glow-1" aria-hidden="true" />
@@ -17,7 +17,7 @@ export default function ExploreCta({ locale }: { locale: string }) {
         <p className="da-cta-sub">
           Recetas, técnicas, ingredientes y guías de cocinas que cruzan océanos. Filtra por país, tipo o dieta.
         </p>
-        <Link href={`/${locale}/recipes`} className="da-btn da-btn--primary">
+        <Link href="/recipes" className="da-btn da-btn--primary">
           Explorar recetas
           <svg className="da-btn-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M4 10h12M11 5l5 5-5 5"/>

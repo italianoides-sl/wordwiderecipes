@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { AffiliateLinkRecord, Content } from '@/lib/db/schema';
 
 function text(value: unknown): string {
@@ -14,9 +15,10 @@ function array<T = Record<string, unknown>>(value: unknown): T[] {
 }
 
 function titleFromKey(key: string) {
-  return key
+  const label = key
     .replaceAll('_', ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    .trim();
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : '';
 }
 
 function affiliateFor(label: unknown, links: AffiliateLinkRecord[] = []) {
@@ -34,8 +36,44 @@ function AffiliateMiniLink({ link }: { link?: AffiliateLinkRecord }) {
   );
 }
 
+function bodyImage(content: Content, index: number) {
+  const images = array<Record<string, unknown>>((content.body as Record<string, unknown> | undefined)?.images);
+  return images[index];
+}
+
+function InlineContentImage({ image, title }: { image?: Record<string, unknown>; title: string }) {
+  const url = text(image?.url);
+  if (!url) return null;
+  const photographerName = text(image?.photographerName);
+  const photographerUrl = text(image?.photographerUrl);
+
+  return (
+    <figure className="body-inline-image">
+      <img src={url} alt={text(image?.alt) || title} loading="lazy" />
+      <figcaption>
+        {photographerName && photographerUrl ? (
+          <>
+            Photo by <a href={photographerUrl} target="_blank" rel="noopener noreferrer">{photographerName}</a>{' '}
+            on <a href="https://unsplash.com/?utm_source=worldwiderecipes&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a>
+          </>
+        ) : (
+          text(image?.attribution) || 'Photo from Unsplash'
+        )}
+      </figcaption>
+    </figure>
+  );
+}
+
 function GenericField({ name, value }: { name: string; value: unknown }) {
   if (!value) return null;
+  if (name === 'intro' && typeof value === 'string') {
+    return (
+      <section className="body-section body-intro">
+        <p>{value}</p>
+      </section>
+    );
+  }
+
   if (Array.isArray(value)) {
     return (
       <section className="body-section">
@@ -100,12 +138,15 @@ function RecipeBody({ content }: { content: Content }) {
           <h2>Paso a paso</h2>
           <ol className="numbered-steps">
             {steps.map((step, index) => (
-              <li key={`${text(step.title)}-${index}`}>
-                {step.title ? <h3>{text(step.title)}</h3> : null}
-                <p>{text(step.text ?? step)}</p>
-                {step.tip ? <small>{text(step.tip)}</small> : null}
-                {step.sensory_cue ? <small>{text(step.sensory_cue)}</small> : null}
-              </li>
+              <Fragment key={`${text(step.title)}-${index}`}>
+                <li>
+                  {step.title ? <h3>{text(step.title)}</h3> : null}
+                  <p>{text(step.text ?? step)}</p>
+                  {step.tip ? <small>{text(step.tip)}</small> : null}
+                  {step.sensory_cue ? <small>{text(step.sensory_cue)}</small> : null}
+                </li>
+                {index === 3 ? <li className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></li> : null}
+              </Fragment>
             ))}
           </ol>
         </section>
@@ -153,11 +194,14 @@ function TechniqueBody({ content }: { content: Content }) {
           <h2>Pasos</h2>
           <ol className="numbered-steps">
             {steps.map((step, index) => (
-              <li key={`${text(step.title)}-${index}`}>
-                {step.title ? <h3>{text(step.title)}</h3> : null}
-                <p>{text(step.text ?? step)}</p>
-                {step.common_mistake ? <small>Error comun: {text(step.common_mistake)}</small> : null}
-              </li>
+              <Fragment key={`${text(step.title)}-${index}`}>
+                <li>
+                  {step.title ? <h3>{text(step.title)}</h3> : null}
+                  <p>{text(step.text ?? step)}</p>
+                  {step.common_mistake ? <small>Error comun: {text(step.common_mistake)}</small> : null}
+                </li>
+                {index === 3 ? <li className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></li> : null}
+              </Fragment>
             ))}
           </ol>
         </section>

@@ -20,37 +20,20 @@ function marketFor(locale: string) {
   return 'global';
 }
 
-function withMarket(response: NextResponse, locale: string) {
-  response.headers.set('x-affiliate-market', marketFor(locale));
-  return response;
-}
-
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const segments = pathname.split('/').filter(Boolean);
-  const first = segments[0];
+  const locale = preferredLocale(request);
+  const market = marketFor(locale);
 
-  if (pathname === '/') {
-    const locale = preferredLocale(request);
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}`;
-    return withMarket(NextResponse.redirect(url), locale);
-  }
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-locale', locale);
+  requestHeaders.set('x-affiliate-market', market);
 
-  if (first && first.length <= 5 && !SUPPORTED_LOCALES.includes(first as SupportedLocale)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/es';
-    return withMarket(NextResponse.redirect(url), 'es');
-  }
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set('x-locale', locale);
+  response.headers.set('x-affiliate-market', market);
+  response.headers.set('Vary', 'Accept-Language');
 
-  if (!first || !SUPPORTED_LOCALES.includes(first as SupportedLocale)) {
-    const locale = preferredLocale(request);
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}${pathname}`;
-    return withMarket(NextResponse.redirect(url), locale);
-  }
-
-  return withMarket(NextResponse.next(), first);
+  return response;
 }
 
 export const config = {

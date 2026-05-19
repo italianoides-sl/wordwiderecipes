@@ -11,10 +11,8 @@ const TYPE_META: Record<string, { label: string; icon: string; description: stri
 const TYPE_ORDER = ['recipe', 'technique', 'ingredient', 'guide', 'spice', 'cuisine'];
 
 export default function WhatWeDoSection({
-  locale,
   typeCounts,
 }: {
-  locale: string;
   typeCounts: Array<{ type: string; count: number }>;
 }) {
   const countMap = Object.fromEntries(typeCounts.map((r) => [r.type, r.count]));
@@ -37,7 +35,7 @@ export default function WhatWeDoSection({
           const meta = TYPE_META[type];
           const count = countMap[type] ?? 0;
           return (
-            <Link key={type} href={`/${locale}/recipes/${meta.filterSeg}`} className="da-type-card" style={{ '--c': meta.color } as React.CSSProperties}>
+            <Link key={type} href={`/recipes/${meta.filterSeg}`} className="da-type-card" style={{ '--c': meta.color } as React.CSSProperties}>
               <div className="da-type-head">
                 <span className="da-type-icon">{meta.icon}</span>
                 <span className="da-type-count" style={{ color: meta.color }}>

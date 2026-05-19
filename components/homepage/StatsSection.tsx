@@ -1,4 +1,4 @@
-export default function StatsSection({ totalCount, locale }: { totalCount: number; locale: string }) {
+export default function StatsSection({ totalCount }: { totalCount: number }) {
   return (
     <section className="da-statbar">
       <div className="da-statbar-grid">

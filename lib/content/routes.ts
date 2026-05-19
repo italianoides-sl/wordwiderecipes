@@ -57,21 +57,21 @@ const URL_TO_DIFFICULTY: Record<string, Difficulty> = {
   dificil: 'hard',
 };
 
-export function contentHref(locale: string, item: { type: string; slug: string }) {
-  return `/${locale}/${item.type}/${item.slug}`;
+export function contentHref(item: { type: string; slug: string }) {
+  return `/${item.type}/${item.slug}`;
 }
 
 export function typeToFilterSegment(type: ContentType) {
   return TYPE_TO_URL[type];
 }
 
-export function filterHref(locale: string, filters: FilterParams = {}) {
+export function filterHref(filters: FilterParams = {}) {
   const segments: string[] = [];
   if (filters.type) segments.push('tipo', TYPE_TO_URL[filters.type]);
   if (filters.country) segments.push('pais', filters.country);
   if (filters.diet) segments.push('dieta', filters.diet);
   if (filters.difficulty) segments.push('dificultad', DIFFICULTY_TO_URL[filters.difficulty]);
-  return `/${locale}/recipes${segments.length ? `/${segments.join('/')}` : ''}`;
+  return `/recipes${segments.length ? `/${segments.join('/')}` : ''}`;
 }
 
 export function mapType(value?: string): ContentType | undefined {

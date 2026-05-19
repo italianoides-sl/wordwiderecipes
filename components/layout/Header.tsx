@@ -2,33 +2,30 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import LocaleSwitcher from './LocaleSwitcher';
 
-type HeaderProps = { locale?: string };
+const links = [
+  { label: 'Inicio', href: '/' },
+  { label: '🌐 Explorar', href: '/recipes' },
+  { label: 'Recetas', href: '/recipes/tipo/receta' },
+  { label: 'Técnicas', href: '/recipes/tipo/tecnica' },
+  { label: 'Ingredientes', href: '/recipes/tipo/ingrediente' },
+  { label: 'Guías', href: '/recipes/tipo/guia' },
+];
 
-export default function Header({ locale = 'es' }: HeaderProps) {
+export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
 
-  const links = [
-    { label: 'Inicio', href: `/${locale}` },
-    { label: '🌐 Explorar', href: `/${locale}/recipes` },
-    { label: 'Recetas', href: `/${locale}/recipes/tipo/receta` },
-    { label: 'Técnicas', href: `/${locale}/recipes/tipo/tecnica` },
-    { label: 'Ingredientes', href: `/${locale}/recipes/tipo/ingrediente` },
-    { label: 'Guías', href: `/${locale}/recipes/tipo/guia` },
-  ];
-
   function isActive(href: string) {
-    if (href === `/${locale}`) return pathname === href;
+    if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   }
 
   return (
     <header className="da-nav">
       <div className="da-nav-inner">
-        <Link href={`/${locale}`} className="da-logo" onClick={() => setMobileOpen(false)}>
+        <Link href="/" className="da-logo" onClick={() => setMobileOpen(false)}>
           <span className="da-logo-globe">🌍</span>
           <span>WorldWideRecipes</span>
         </Link>
@@ -52,7 +49,6 @@ export default function Header({ locale = 'es' }: HeaderProps) {
           >
             @tuvirtualchef ↗
           </a>
-          <LocaleSwitcher locale={locale} />
         </nav>
 
         <button

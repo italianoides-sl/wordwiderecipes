@@ -1,4 +1,4 @@
-import { generateJSON } from '@/lib/ai/gemini';
+import { generateJSON } from '@/lib/ai/openai';
 import type { ContentDraft, ContentType, Locale } from './types';
 
 type GenerateContentInput = {
@@ -13,6 +13,18 @@ type RawDraft = Record<string, unknown>;
 
 const CONTENT_TYPES = new Set(['recipe', 'technique', 'ingredient', 'guide', 'cuisine', 'spice']);
 const LOCALES = new Set(['es', 'es-mx', 'es-ar', 'en', 'pt-br']);
+const VALIDATION_CRITICAL_PROMPT = `CRITICAL: Your response will be automatically validated.
+To pass on the first attempt you MUST include:
+- quick_answer field: 40-60 word direct answer
+- citation_summary field: 100 word citable summary
+- personal_opinion inside body: 60-100 word chef reflection
+- faq array: minimum 5 questions with detailed answers
+- All text fields combined must exceed 800 words
+- Do NOT use generic openings like 'Esta deliciosa receta'
+
+Return ONLY valid JSON. No markdown. No preamble.
+
+`;
 
 function stringField(source: RawDraft, snake: string, camel = snake): string | undefined {
   const value = source[snake] ?? source[camel];
@@ -317,13 +329,13 @@ function promptFor(input: Required<Pick<GenerateContentInput, 'topic' | 'content
 export async function generateContent(input: GenerateContentInput): Promise<ContentDraft> {
   const contentType = CONTENT_TYPES.has(input.contentType) ? input.contentType : 'guide';
   const locale = LOCALES.has(input.locale) ? input.locale : 'es';
-  const prompt = `${retryPrefix(input.improvements ?? [], input.criticalFixes ?? [])}${promptFor({
+  const prompt = `${retryPrefix(input.improvements ?? [], input.criticalFixes ?? [])}${VALIDATION_CRITICAL_PROMPT}${promptFor({
     topic: input.topic,
     contentType,
     locale,
   })}`;
 
-  const raw = await generateJSON<RawDraft>(prompt, 2);
+  const raw = await generateJSON<RawDraft>(prompt, 2, { maxTokens: 4096 });
   const body = (raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : {}) as Record<string, unknown>;
   const title = stringField(raw, 'title') ?? input.topic;
   const slug = normalizeSlug(stringField(raw, 'slug') ?? title);

@@ -60,7 +60,7 @@ export default async function HeroBanner({ locale = 'es' }: { locale?: string })
 
       <div className="wwr-hero-grid">
         <article className="wwr-card wwr-card--featured" data-cuisine={primary.cuisine ?? ''}>
-          <a className="wwr-card-link" href={contentHref(locale, primary)}>
+          <a className="wwr-card-link" href={contentHref(primary)}>
             <div className="wwr-card-media">
               {primary.imageUrl ? <img className="wwr-card-img wwr-parallax-img" src={primary.imageUrl} alt={primary.imageAlt ?? primary.title} /> : <div className="image-skeleton" />}
               <div className="wwr-card-overlay" />
@@ -87,7 +87,7 @@ export default async function HeroBanner({ locale = 'es' }: { locale?: string })
         <div className="wwr-hero-stack">
           {secondary.slice(0, 2).map((item) => (
             <article className="wwr-card wwr-card--secondary" data-cuisine={item.cuisine ?? ''} key={item.id}>
-              <a className="wwr-card-link" href={contentHref(locale, item)}>
+              <a className="wwr-card-link" href={contentHref(item)}>
                 <div className="wwr-card-media">
                   {item.imageUrl ? <img className="wwr-card-img wwr-parallax-img" src={item.imageUrl} alt={item.imageAlt ?? item.title} /> : <div className="image-skeleton" />}
                   <div className="wwr-card-overlay" />

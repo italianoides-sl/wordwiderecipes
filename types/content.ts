@@ -34,7 +34,7 @@ export interface Content {
   seoDescription: string;
   canonicalUrl?: string;
   published: boolean;
-  generatedBy?: 'gemini-1.5-flash' | 'manual';
+  generatedBy?: 'gpt-4o-mini' | 'manual';
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;

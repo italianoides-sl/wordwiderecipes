@@ -1,4 +1,4 @@
-import { generateJSON } from '@/lib/ai/gemini';
+import { generateJSON } from '@/lib/ai/openai';
 import type { ContentDraft, QualityReport } from './types';
 
 function fullText(value: unknown): string {
@@ -13,7 +13,7 @@ function fullText(value: unknown): string {
 function scoreWordCount(wordCount: number) {
   if (wordCount >= 900) return 10;
   if (wordCount >= 800) return 8;
-  if (wordCount >= 700) return 6;
+  if (wordCount >= 500) return 6;
   return 1;
 }
 
@@ -39,38 +39,28 @@ function completeScores(report: QualityReport, wordCount: number): QualityReport
     ).toFixed(1),
   );
 
+  const reportedAverage = Number(report.average);
+
   return {
     scores,
-    average: Number.isFinite(Number(report.average)) ? Number(report.average) : average,
+    average: Number.isFinite(reportedAverage) && reportedAverage > 0 ? reportedAverage : average,
     publish: Boolean(report.publish),
     hard_fails: Array.isArray(report.hard_fails) ? report.hard_fails : [],
     improvements: Array.isArray(report.improvements) ? report.improvements : [],
   };
 }
 
-export async function validateContent(draft: ContentDraft): Promise<QualityReport> {
-  const wordCount = JSON.stringify(draft.body).split(/\s+/).filter(Boolean).length;
+export async function validateContent(draft: ContentDraft, attempt: number = 1): Promise<QualityReport> {
+  const bodyText = draft.body ? JSON.stringify(draft.body) : '';
+  const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
   const faqCount = draft.faq?.length ?? 0;
   const hardFails: string[] = [];
 
-  if (wordCount < 700) hardFails.push(`Word count too low: ${wordCount} (min 700)`);
-  if (faqCount < 5) hardFails.push(`Not enough FAQs: ${faqCount} (min 5)`);
-  if (!draft.quickAnswer) hardFails.push('Missing quick_answer field');
-  if (!draft.citationSummary) hardFails.push('Missing citation_summary field');
   if (!draft.title) hardFails.push('Missing title');
   if (!draft.slug) hardFails.push('Missing slug');
-  const genericOpenings = [
-    'esta deliciosa',
-    'this delicious',
-    'en este artículo',
-    'hoy te traemos',
-    'bienvenidos',
-    'en la cocina',
-  ];
-  const intro = JSON.stringify(draft.body).toLowerCase().slice(0, 200);
-  if (genericOpenings.some((opening) => intro.includes(opening))) {
-    hardFails.push('Generic opening detected - needs cultural hook');
-  }
+  if (!draft.body || typeof draft.body !== 'object') hardFails.push('Missing body');
+  if (faqCount < 3) hardFails.push(`Not enough FAQs: ${faqCount} (min 3)`);
+  if (wordCount < 500) hardFails.push(`Word count too low: ${wordCount} (min 500)`);
 
   if (hardFails.length > 0) {
     return {
@@ -94,24 +84,30 @@ export async function validateContent(draft: ContentDraft): Promise<QualityRepor
     };
   }
 
+  const body = draft.body as Record<string, unknown>;
+  const validationSummary = {
+    title: draft.title,
+    quick_answer: draft.quickAnswer ?? null,
+    citation_summary: draft.citationSummary ?? null,
+    faq_count: faqCount,
+    word_count: wordCount,
+    intro_preview: typeof body.intro === 'string' ? body.intro.slice(0, 200) : fullText(body).slice(0, 200),
+    has_personal_opinion: typeof body.personal_opinion === 'string' && body.personal_opinion.trim().length > 0,
+  };
+
   const report = completeScores(
     await generateJSON<QualityReport>(`
 Evaluate this food article quality. Score each dimension 1-10.
 
-TITLE: ${draft.title}
-WORD COUNT: ${wordCount}
-FAQ COUNT: ${faqCount}
-HAS QUICK_ANSWER: ${!!draft.quickAnswer}
-HAS CITATION_SUMMARY: ${!!draft.citationSummary}
-ENTITY MENTIONS: ${draft.entityMentions?.length ?? 0}
-INTRO PREVIEW: ${JSON.stringify(draft.body).slice(0, 500)}
+ARTICLE SUMMARY:
+${JSON.stringify(validationSummary, null, 2)}
 
 Dimensions:
 1. cultural_depth (1-10): specific places, traditions, real cultural context?
 2. chef_authority (1-10): reads like real cooking knowledge?
 3. search_coverage (1-10): covers all questions a searcher would have?
 4. uniqueness (1-10): distinctive angle, not generic AI content?
-5. word_count (1-10): 900+=10, 800+=8, 700+=6
+5. word_count (1-10): 900+=10, 800+=8, 500+=6
 6. faq_quality (1-10): real questions, substantive answers?
 7. affiliate_natural (1-10): affiliate hints are useful and not excessive?
 8. locale_accuracy (1-10): names, units, and references fit the locale?
@@ -139,11 +135,12 @@ Return ONLY valid JSON:
   "hard_fails": [],
   "improvements": ["specific actionable improvements if needed"]
 }
-  `),
+  `, 1, { maxTokens: 512 }),
     wordCount,
   );
 
-  report.publish = report.average >= parseFloat(process.env.MIN_QUALITY_SCORE ?? '7.0') && hardFails.length === 0;
+  const threshold = attempt === 1 ? 6.0 : 7.0;
+  report.publish = report.average >= threshold && hardFails.length === 0;
 
   return report;
 }

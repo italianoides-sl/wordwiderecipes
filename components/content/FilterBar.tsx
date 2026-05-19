@@ -27,12 +27,12 @@ function same(a?: string, b?: string) {
   return a === b;
 }
 
-export default function FilterBar({ locale, filters }: { locale: string; filters: FilterParams }) {
+export default function FilterBar({ filters }: { filters: FilterParams }) {
   const router = useRouter();
   const hasFilters = Boolean(filters.type || filters.country || filters.diet || filters.difficulty);
 
   function go(next: FilterParams) {
-    router.push(filterHref(locale, next));
+    router.push(filterHref(next));
   }
 
   return (

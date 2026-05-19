@@ -44,7 +44,7 @@ CREATE TABLE content (
   faq jsonb,
   quality_score numeric(3,1),
   quality_details jsonb,
-  ai_model text DEFAULT 'gemini-1.5-flash',
+  ai_model text DEFAULT 'gpt-4o-mini',
   generation_prompt_version text,
   human_reviewed boolean DEFAULT false,
   human_reviewed_at timestamptz,
@@ -144,13 +144,14 @@ CREATE TABLE trending_topics (
   selected boolean DEFAULT false,
   content_id uuid REFERENCES content(id),
   skipped_reason text,
+  detected_date date DEFAULT CURRENT_DATE,
   detected_at timestamptz DEFAULT now()
 );
 
 CREATE INDEX idx_trending_date ON trending_topics(detected_at DESC);
 CREATE INDEX idx_trending_type ON trending_topics(content_type);
 CREATE UNIQUE INDEX idx_trending_topic_locale
-  ON trending_topics(topic, locale_primary, (DATE(detected_at)));
+  ON trending_topics(topic, locale_primary, detected_date);
 
 CREATE TABLE generation_jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

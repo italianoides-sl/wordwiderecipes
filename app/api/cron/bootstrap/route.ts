@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
-import { generateJSON } from '@/lib/ai/gemini';
+import { generateJSON } from '@/lib/ai/openai';
 import { runContentPipeline } from '@/lib/content/pipeline';
 import { db, generationJobs, type ContentType, type Locale } from '@/lib/db/schema';
 
@@ -8,6 +8,19 @@ type BootstrapTopic = {
   topic: string;
   contentType: ContentType;
   locale: Locale;
+};
+
+type BootstrapTopicAI = {
+  topic: string;
+  content_type?: ContentType;
+  contentType?: ContentType;
+  locale: Locale;
+};
+
+type BootstrapTopicResponse = {
+  topics?: BootstrapTopicAI[];
+  trends?: BootstrapTopicAI[];
+  items?: BootstrapTopicAI[];
 };
 
 function authorized(request: NextRequest) {
@@ -18,20 +31,33 @@ function authorized(request: NextRequest) {
 }
 
 async function getBootstrapTopics(offset: number, limit: number): Promise<BootstrapTopic[]> {
-  const topics = await generateJSON<Array<{ topic: string; content_type: ContentType; locale: Locale }>>(`
+  const topicsResponse = await generateJSON<BootstrapTopicAI[] | BootstrapTopicResponse>(`
 Create ${limit} specific Spanish-language culinary content topics for a bootstrap batch.
 Start at catalog offset ${offset}.
 Mix content types across recipe, technique, ingredient, guide, spice, and cuisine.
 Use locales es-mx and es, with a slight preference for es-mx.
 Avoid generic titles. Each topic must have clear search intent and natural affiliate potential.
 
-Return ONLY valid JSON:
-[{"topic":"specific topic","content_type":"recipe|technique|ingredient|guide|spice|cuisine","locale":"es-mx|es"}]
+Return a JSON object with this exact structure:
+{
+  "topics": [
+    {"topic":"specific topic","content_type":"recipe|technique|ingredient|guide|spice|cuisine","locale":"es-mx|es"}
+  ]
+}
+The topics array must contain exactly ${limit} items.
   `);
+
+  const topics = Array.isArray(topicsResponse)
+    ? topicsResponse
+    : (topicsResponse.topics ?? topicsResponse.trends ?? topicsResponse.items ?? []);
+
+  if (!Array.isArray(topics) || topics.length === 0) {
+    throw new Error('No bootstrap topics returned from AI');
+  }
 
   return topics.map((topic) => ({
     topic: topic.topic,
-    contentType: topic.content_type,
+    contentType: topic.content_type ?? topic.contentType ?? 'recipe',
     locale: topic.locale,
   }));
 }

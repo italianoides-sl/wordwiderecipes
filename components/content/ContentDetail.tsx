@@ -30,7 +30,7 @@ function imageAttribution(content: Content) {
   if (photographerName && photographerUrl) {
     return (
       <figcaption className="rp-hero-caption">
-        📷 Photo by <a href={photographerUrl} target="_blank" rel="noopener noreferrer">{photographerName}</a>{' '}
+        Photo by <a href={photographerUrl} target="_blank" rel="noopener noreferrer">{photographerName}</a>{' '}
         on <a href="https://unsplash.com/?utm_source=worldwiderecipes&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a>
       </figcaption>
     );
@@ -51,9 +51,9 @@ export default function ContentDetail({ content, related }: { content: Content; 
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Inicio', item: `/${content.locale}` },
-      { '@type': 'ListItem', position: 2, name: content.type, item: `/${content.locale}/recipes/tipo/${typeFilter}` },
-      { '@type': 'ListItem', position: 3, name: content.cuisine ?? content.title, item: contentHref(content.locale, content) },
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: '/' },
+      { '@type': 'ListItem', position: 2, name: content.type, item: `/recipes/tipo/${typeFilter}` },
+      { '@type': 'ListItem', position: 3, name: content.cuisine ?? content.title, item: contentHref(content) },
     ],
   };
 
@@ -69,11 +69,11 @@ export default function ContentDetail({ content, related }: { content: Content; 
         <article className="rp-main content-detail">
           <nav className="rp-breadcrumb" aria-label="Migas de pan">
             <ol>
-              <li><a href={`/${content.locale}`}>Inicio</a><span className="rp-bc-sep">›</span></li>
-              <li><a href={`/${content.locale}/recipes/tipo/${typeFilter}`}>{content.type}</a><span className="rp-bc-sep">›</span></li>
+              <li><a href="/">Inicio</a><span className="rp-bc-sep">›</span></li>
+              <li><a href={`/recipes/tipo/${typeFilter}`}>{content.type}</a><span className="rp-bc-sep">›</span></li>
               {content.cuisine ? (
                 <li>
-                  {countrySlug ? <a href={`/${content.locale}/recipes/pais/${countrySlug}`}>{content.cuisine}</a> : <span>{content.cuisine}</span>}
+                  {countrySlug ? <a href={`/recipes/pais/${countrySlug}`}>{content.cuisine}</a> : <span>{content.cuisine}</span>}
                   <span className="rp-bc-sep">›</span>
                 </li>
               ) : null}
@@ -165,7 +165,7 @@ export default function ContentDetail({ content, related }: { content: Content; 
               <h2>También te puede interesar</h2>
               <div className="directory-grid">
                 {related.slice(0, 4).map((item) => (
-                  <a className="directory-card" href={contentHref(content.locale, item)} key={item.id}>
+                  <a className="directory-card" href={contentHref(item)} key={item.id}>
                     {item.imageUrl ? <img src={item.imageUrl} alt={item.imageAlt ?? item.title} /> : <span className="directory-card-fallback" />}
                     <span className="directory-card-type">{item.type}</span>
                     <h3>{item.title}</h3>
@@ -175,6 +175,10 @@ export default function ContentDetail({ content, related }: { content: Content; 
               </div>
             </section>
           ) : null}
+
+          <div className="wwr-ai-disclosure">
+            Artículo redactado con asistencia de OpenAI · Revisado editorialmente · Fotos: Unsplash
+          </div>
 
           <TikTokCTA hashtags={content.tiktokHashtags ?? []} />
         </article>
