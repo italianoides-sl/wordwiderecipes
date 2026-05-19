@@ -1,0 +1,83 @@
+# .gitlab-ci.yml
+
+stages:
+  - content
+  - images
+  - sitemaps
+
+variables:
+  BASE_URL: "https://worldwiderecipes.app"
+
+# ── Genera 10 artículos diarios ──────────────────────────────
+daily-content:
+  stage: content
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      echo "🚀 Starting daily content generation..."
+      curl -X GET "$BASE_URL/api/cron/daily-content" \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        -H "Content-Type: application/json" \
+        --max-time 1800 \
+        --retry 2 \
+        --retry-delay 30 \
+        -v
+      echo "✅ Daily content done"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+  timeout: 30 minutes
+
+# ── Actualiza homepage config ─────────────────────────────────
+update-homepage:
+  stage: content
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      curl -X GET "$BASE_URL/api/cron/update-homepage" \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        --max-time 60
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+  needs: ["daily-content"]
+  timeout: 5 minutes
+
+# ── Actualiza sitemaps ────────────────────────────────────────
+update-sitemaps:
+  stage: sitemaps
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      curl -X GET "$BASE_URL/api/cron/update-sitemaps" \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        --max-time 120
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+  needs: ["daily-content"]
+  timeout: 5 minutes
+
+# ── Sync analytics (lunes) ────────────────────────────────────
+sync-analytics:
+  stage: content
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      curl -X GET "$BASE_URL/api/cron/sync-analytics" \
+        -H "Authorization: Bearer $CRON_SECRET" \
+        --max-time 300
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+  timeout: 10 minutes

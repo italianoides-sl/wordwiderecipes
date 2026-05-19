@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">WorldWideRecipes WWR logo</title>
+  <desc id="desc">Editorial cream and black monogram logo with the letters WWR.</desc>
+  <rect width="512" height="512" rx="92" fill="#f6f0e6"/>
+  <circle cx="256" cy="256" r="194" fill="#111111"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#f6f0e6" stroke-width="8"/>
+  <path d="M138 172h38l28 126 34-126h36l34 126 28-126h38l-46 168h-38l-34-118-34 118h-38L138 172Z" fill="#f6f0e6"/>
+  <path d="M342 172h52c36 0 59 20 59 52 0 23-12 40-32 48l39 68h-42l-34-61h-7v61h-35V172Zm35 31v47h14c17 0 27-9 27-24 0-14-10-23-27-23h-14Z" fill="#f6f0e6"/>
+  <path d="M94 369h324" stroke="#f6f0e6" stroke-width="8" stroke-linecap="round"/>
+  <path d="M189 393h134" stroke="#f6f0e6" stroke-width="5" stroke-linecap="round" opacity=".75"/>
+</svg>
