@@ -1,6 +1,3 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
 const LOCALES = ['es', 'es-mx', 'es-ar', 'en', 'pt-br'];
 
 function marketFor(locale: string) {
@@ -10,36 +7,42 @@ function marketFor(locale: string) {
   return 'global';
 }
 
-export function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+function redirect(request: Request, pathname: string) {
+  return Response.redirect(new URL(pathname, request.url), 307);
+}
+
+function rewrite(request: Request, pathname: string, locale: string, search = '') {
+  const url = new URL(pathname, request.url);
+  url.search = search;
+
+  const headers = new Headers();
+  headers.set('x-middleware-rewrite', url.href);
+  headers.set('x-middleware-override-headers', 'x-locale,x-affiliate-market');
+  headers.set('x-middleware-request-x-locale', locale);
+  headers.set('x-middleware-request-x-affiliate-market', marketFor(locale));
+  headers.set('x-locale', locale);
+  headers.set('x-affiliate-market', marketFor(locale));
+
+  return new Response(null, { headers });
+}
+
+export function middleware(request: Request) {
+  const url = new URL(request.url);
+  const { pathname, search } = url;
 
   if (pathname === '/') {
-    return NextResponse.redirect(new URL('/es', request.url));
+    return redirect(request, '/es');
   }
 
   const parts = pathname.split('/');
   const locale = parts[1];
 
   if (LOCALES.includes(locale)) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-locale', locale);
-    requestHeaders.set('x-affiliate-market', marketFor(locale));
-
     const internalPath = parts.slice(2).join('/');
-    const rewriteUrl = new URL(internalPath ? `/${internalPath}` : '/', request.url);
-    rewriteUrl.search = search;
-
-    const response = NextResponse.rewrite(rewriteUrl, {
-      request: {
-        headers: requestHeaders,
-      },
-    });
-    response.headers.set('x-locale', locale);
-    response.headers.set('x-affiliate-market', marketFor(locale));
-    return response;
+    return rewrite(request, internalPath ? `/${internalPath}` : '/', locale, search);
   }
 
-  return NextResponse.redirect(new URL(`/es${pathname}`, request.url));
+  return redirect(request, `/es${pathname}`);
 }
 
 export const config = {
