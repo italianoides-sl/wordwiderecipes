@@ -23,6 +23,16 @@ If you cannot think of step 5, combine it with step 4.
 
 `;
 
+const MANDATORY_STEPS_RULE = `MANDATORY RULE FOR STEPS:
+Every step must have minimum 80 words in the 'text' field.
+Step 5 is NOT a closing step — it must be as detailed as step 1.
+Never write 'Sirve y disfruta' or similar as a full step.
+If step 5 is about serving: describe plating, garnishes, 
+temperature, presentation details — minimum 80 words.
+A step with less than 40 words will cause a validation failure.
+
+`;
+
 function stringField(source: RawDraft, snake: string, camel = snake): string | undefined {
   const value = source[snake] ?? source[camel];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -79,7 +89,7 @@ Return ONLY valid JSON (snake_case keys):
 }
 
 function recipePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `Chef writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}Chef writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
@@ -98,7 +108,7 @@ ${base('recipe')}`;
 }
 
 function techniquePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `Chef/culinary teacher writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}Chef/culinary teacher writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
@@ -109,7 +119,7 @@ ${base('technique')}`;
 }
 
 function ingredientPrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `Chef and ingredient buyer writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}Chef and ingredient buyer writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
@@ -120,7 +130,7 @@ ${base('ingredient')}`;
 }
 
 function guidePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `Culinary editor writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}Culinary editor writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
@@ -131,7 +141,7 @@ ${base('guide')}`;
 }
 
 function spicePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `Spice specialist writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}Spice specialist writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
@@ -142,7 +152,7 @@ ${base('spice')}`;
 }
 
 function cuisinePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `Culinary historian and cook writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}Culinary historian and cook writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 

@@ -173,11 +173,18 @@ function sanitizeContent(draft: ContentDraft): ContentDraft {
   const sanitized = clean(draft) as ContentDraft;
   const filterSteps = (steps: unknown) => {
     if (!Array.isArray(steps)) return [];
-    return steps.filter((step) => {
-      if (!step || typeof step !== 'object') return false;
-      const text = (step as { text?: unknown }).text;
-      return typeof text === 'string' && text.trim().length > 30;
-    });
+    return steps
+      .map((step) => {
+        if (!step || typeof step !== 'object') return { text: '' };
+        const record = step as Record<string, unknown>;
+        return {
+          ...record,
+          text: typeof record.text === 'string' ? record.text.trim() : '',
+        };
+      })
+      .filter((step) => {
+        return step.text.length >= 40;
+      });
   };
 
   sanitized.body = {
@@ -190,18 +197,24 @@ function sanitizeContent(draft: ContentDraft): ContentDraft {
   return sanitized;
 }
 
-function assertValidRecipeSteps(draft: ContentDraft) {
-  if (draft.type !== 'recipe') return;
+function assertValidSteps(draft: ContentDraft) {
   const steps = Array.isArray(draft.body?.steps) ? draft.body.steps : [];
-  const validSteps = steps.filter((step) => {
-    if (!step || typeof step !== 'object') return false;
-    const text = (step as { text?: unknown }).text;
-    return typeof text === 'string' && text.trim().length > 30;
-  });
+  const validSteps = steps
+    .map((step) => {
+      if (!step || typeof step !== 'object') return false;
+      const record = step as Record<string, unknown>;
+      return {
+        ...record,
+        text: typeof record.text === 'string' ? record.text.trim() : '',
+      };
+    })
+    .filter((step): step is Record<string, unknown> & { text: string } => {
+      return Boolean(step) && typeof step === 'object' && step.text.length >= 40;
+    });
   draft.body.steps = validSteps;
 
   if (validSteps.length < 4) {
-    throw new Error('Too few valid steps — regenerating');
+    throw new Error(`Only ${validSteps.length} valid steps — regenerating`);
   }
 }
 
@@ -231,7 +244,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
           criticalFixes: quality?.hard_fails ?? [],
         });
         draft = sanitizeContent(draft);
-        assertValidRecipeSteps(draft);
+        assertValidSteps(draft);
       } catch (err) {
         await updateJob(job.id, {
           status: attempts < 2 ? 'running' : 'failed',
