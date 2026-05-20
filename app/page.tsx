@@ -27,7 +27,7 @@ export default async function HomePage() {
   ]);
 
   return (
-    <main>
+    <main className="wwr-page">
       <HeroBanner locale={locale} />
       <AboutSection />
       <WhatWeDoSection typeCounts={typeCounts} />

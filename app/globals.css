@@ -280,6 +280,8 @@
 
 html, body {
   margin: 0;
+  overflow-x: hidden;
+  max-width: 100%;
   background: var(--wwr-bg);
   color: var(--wwr-ink);
   font-family: var(--wwr-font-body);
@@ -330,9 +332,10 @@ svg {
 .rp-shell,
 .directory-page,
 .da-legal,
-.da-notfound {
-  padding-left: clamp(20px, 4vw, 48px);
-  padding-right: clamp(20px, 4vw, 48px);
+.da-notfound,
+.tcs-shell {
+  padding-left: clamp(16px, 4vw, 48px);
+  padding-right: clamp(16px, 4vw, 48px);
 }
 
 @media (max-width: 560px) {
@@ -341,7 +344,9 @@ svg {
   .rp-shell,
   .directory-page,
   .da-legal,
-  .da-notfound {
+  .da-notfound,
+  .tcs-shell,
+  .site-shell > main {
     padding-left: 16px;
     padding-right: 16px;
   }
@@ -6019,11 +6024,14 @@ img { display: block; max-width: 100%; }
   .wwr-page,
   .directory-page,
   .wwr-browse-page,
-  .rp-shell {
+  .rp-shell,
+  .tcs-shell,
+  .site-shell > main {
     width: 100%;
     max-width: 100%;
     padding-left: 16px;
     padding-right: 16px;
+    box-sizing: border-box;
   }
 
   .directory-page {
@@ -6243,7 +6251,9 @@ img { display: block; max-width: 100%; }
   .wwr-page,
   .directory-page,
   .wwr-browse-page,
-  .rp-shell {
+  .rp-shell,
+  .tcs-shell,
+  .site-shell > main {
     padding-left: 12px;
     padding-right: 12px;
   }
