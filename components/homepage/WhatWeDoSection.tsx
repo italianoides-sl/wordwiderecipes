@@ -44,11 +44,6 @@ export default function WhatWeDoSection({
               </div>
               <h3 className="da-type-title">{meta.label}</h3>
               <p className="da-type-copy">{meta.description}</p>
-              {count === 0 && (
-                <span style={{ fontSize: '11px', color: 'var(--da-ink-subtle)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Próximamente
-                </span>
-              )}
               <div className="da-type-bar"><span /></div>
             </Link>
           );
