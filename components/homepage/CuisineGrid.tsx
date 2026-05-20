@@ -26,7 +26,7 @@ export default async function CuisineGrid({ locale = 'es' }: { locale?: string }
             La cocina del mundo,<br />
             <em>en un solo lugar.</em>
           </h2>
-          <a className="hs-link" href={`/${locale}/recipes`}>
+          <a className="hs-link" href="/recipes">
             Ver todos los paises
             <span>→</span>
           </a>

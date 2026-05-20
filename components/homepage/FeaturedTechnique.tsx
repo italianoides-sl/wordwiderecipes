@@ -1,4 +1,5 @@
 import { getFeaturedByType } from '@/lib/db/queries';
+import { contentHref } from '@/lib/content/routes';
 import { withDbFallback } from '@/lib/db/safe-query';
 import type { Locale } from '@/lib/db/schema';
 
@@ -50,7 +51,7 @@ export default async function FeaturedTechnique({ locale = 'es' }: { locale?: st
             <li><span className="td-meta-label">Tipo</span><span className="td-meta-value">{technique.type}</span></li>
           </ul>
 
-          <a href={`/${locale}/technique/${technique.slug}`} className="td-cta">
+          <a href={contentHref(technique)} className="td-cta">
             Aprender esta tecnica <span>→</span>
           </a>
         </div>

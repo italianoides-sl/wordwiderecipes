@@ -17,6 +17,9 @@ const LOCALES = new Set(['es', 'es-mx', 'es-ar', 'en', 'pt-br']);
 const CRITICAL_PREFIX = `Return ONLY valid JSON. No markdown. No preamble.
 Must include: quick_answer, citation_summary, personal_opinion in body, faq (min 5 items).
 Never start with "Esta deliciosa receta..." or similar generic openers.
+Every step MUST have substantial text (minimum 50 words).
+Never leave a step empty or with placeholder text.
+If you cannot think of step 5, combine it with step 4.
 
 `;
 
@@ -81,6 +84,14 @@ Topic: ${topic}
 Angle: ${uniqueAngle}
 
 Rules: cultural opening 100+ words · ingredients with local names, quality notes, substitutes, affiliate_hint for Amazon items · min 10 steps with WHY and sensory cues · 3 variations · min 6 FAQ (60-100w answers) · personal_opinion 60-100w first-person chef reflection · citation_summary 100w
+
+CRITICAL: Every single step must have:
+- title: minimum 3 words
+- text: minimum 60 words explaining what to do AND why
+- Never leave any step empty, short, or with placeholder text
+- If a step has less than 30 words, expand it or merge with previous step
+
+After generating, verify in your response that NO step has empty text before returning the JSON.
 
 body:{"intro":"","chef_secrets":["","",""],"ingredients":[{"name":"","amount":"","unit":"","note":"","substitute":"","affiliate_hint":""}],"steps":[{"order":1,"title":"","text":"","tip":"","sensory_cue":""}],"variations":[{"name":"","description":""}],"pairing":"","personal_opinion":"A personal reflection of 60-100 words in first person about this dish — a memory, cultural insight, or chef perspective. Must feel genuine and specific, not generic.","chef_note":""}
 ${base('recipe')}`;

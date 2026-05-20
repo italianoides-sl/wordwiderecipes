@@ -14,8 +14,8 @@ import {
   type Locale,
 } from './schema';
 
-function publishedLocale(locale: Locale): SQL {
-  return and(eq(content.status, 'published'), eq(content.locale, locale))!;
+function publishedOnly(): SQL {
+  return eq(content.status, 'published');
 }
 
 export async function getPublishedContent(
@@ -24,7 +24,7 @@ export async function getPublishedContent(
   limit = 24,
   offset = 0,
 ) {
-  const where = type ? and(publishedLocale(locale), eq(content.type, type)) : publishedLocale(locale);
+  const where = type ? and(publishedOnly(), eq(content.type, type)) : publishedOnly();
 
   return db
     .select()
@@ -98,7 +98,7 @@ export async function getRelatedContent(slug: string, locale: Locale, limit = 6)
     .from(content)
     .where(
       and(
-        publishedLocale(locale),
+        publishedOnly(),
         sql`${content.slug} = ANY(${current.relatedSlugs})`,
       ),
     )
@@ -112,7 +112,7 @@ export async function getRelatedContentForContent(row: Content, limit = 4) {
       .from(content)
       .where(
         and(
-          publishedLocale(row.locale as Locale),
+          publishedOnly(),
           sql`${content.slug} = ANY(${row.relatedSlugs})`,
         ),
       )
@@ -123,7 +123,7 @@ export async function getRelatedContentForContent(row: Content, limit = 4) {
   return db
     .select()
     .from(content)
-    .where(and(publishedLocale(row.locale as Locale), eq(content.type, row.type), sql`${content.id} <> ${row.id}`))
+    .where(and(publishedOnly(), eq(content.type, row.type), sql`${content.id} <> ${row.id}`))
     .orderBy(desc(content.publishedAt))
     .limit(limit);
 }
@@ -164,7 +164,7 @@ export async function searchContent(
   const page = Math.max(filters?.page ?? 1, 1);
   const pageSize = Math.min(Math.max(filters?.pageSize ?? 20, 1), 100);
   const terms = query.trim();
-  const whereParts: SQL[] = [publishedLocale(locale)];
+  const whereParts: SQL[] = [publishedOnly()];
 
   if (terms) {
     whereParts.push(sql`
@@ -193,7 +193,7 @@ export async function searchContent(
 export async function getContentByFiltersPaged(locale: Locale, filters: FilterParams = {}, page = 0, pageSize = 12) {
   const safePage = Math.max(page, 0);
   const safePageSize = Math.min(Math.max(pageSize, 1), 48);
-  const whereParts: SQL[] = [publishedLocale(locale)];
+  const whereParts: SQL[] = [publishedOnly()];
 
   if (filters.type) whereParts.push(eq(content.type, filters.type));
   if (filters.cuisine) whereParts.push(eq(content.cuisine, filters.cuisine));
@@ -226,7 +226,7 @@ export async function getContentByFilter(
   diet?: string,
   difficulty?: 'easy' | 'medium' | 'hard',
 ) {
-  const whereParts: SQL[] = [publishedLocale(locale)];
+  const whereParts: SQL[] = [publishedOnly()];
   if (type) whereParts.push(eq(content.type, type));
   if (cuisine) whereParts.push(eq(content.cuisine, cuisine));
   if (diet) whereParts.push(sql`${content.dietTags} @> ARRAY[${diet}]::text[]`);
@@ -263,7 +263,7 @@ export async function getContentSearchFallback(query: string, locale: Locale, li
     .from(content)
     .where(
       and(
-        publishedLocale(locale),
+        publishedOnly(),
         or(ilike(content.title, like), ilike(content.metaDescription, like), ilike(content.cuisine, like)),
       ),
     )
@@ -274,7 +274,7 @@ export async function getDailyFeaturedContent(locale: Locale, limit = 3) {
   const rows = await db
     .select()
     .from(content)
-    .where(and(publishedLocale(locale), sql`${content.imageUrl} is not null`))
+    .where(and(publishedOnly(), sql`${content.imageUrl} is not null`))
     .orderBy(sql`md5(${content.id}::text || current_date::text)`)
     .limit(limit);
 
@@ -283,7 +283,7 @@ export async function getDailyFeaturedContent(locale: Locale, limit = 3) {
   const fallback = await db
     .select()
     .from(content)
-    .where(publishedLocale(locale))
+    .where(publishedOnly())
     .orderBy(sql`md5(${content.id}::text || current_date::text)`)
     .limit(limit);
 
@@ -294,7 +294,7 @@ export async function getHomepageFeaturedContent(locale: Locale, limit = 3) {
   const configured = await db
     .select()
     .from(content)
-    .where(publishedLocale(locale))
+    .where(publishedOnly())
     .orderBy(desc(content.impressions7d), desc(content.clicks7d), desc(content.publishedAt))
     .limit(limit);
 
@@ -306,7 +306,7 @@ export async function getFeaturedByType(locale: Locale, type: ContentType) {
   const [row] = await db
     .select()
     .from(content)
-    .where(and(publishedLocale(locale), eq(content.type, type)))
+    .where(and(publishedOnly(), eq(content.type, type)))
     .orderBy(sql`md5(${content.id}::text || current_date::text)`)
     .limit(1);
 
@@ -322,7 +322,7 @@ export async function getCuisineCountryCounts(locale: Locale) {
       const [{ total }] = await db
         .select({ total: count() })
         .from(content)
-        .where(and(publishedLocale(locale), or(...conditions)));
+        .where(and(publishedOnly(), or(...conditions)));
       result[country.slug] = Number(total);
     }),
   );
@@ -341,7 +341,7 @@ export async function getContentTypeCounts(locale: string): Promise<Array<{ type
   const rows = await db
     .select({ type: content.type, count: sql<number>`cast(count(*) as int)` })
     .from(content)
-    .where(and(eq(content.status, 'published'), eq(content.locale, locale)))
+    .where(publishedOnly())
     .groupBy(content.type);
   return rows;
 }
@@ -350,7 +350,7 @@ export async function getTotalPublishedCount(locale: string): Promise<number> {
   const [row] = await db
     .select({ count: sql<number>`cast(count(*) as int)` })
     .from(content)
-    .where(and(eq(content.status, 'published'), eq(content.locale, locale)));
+    .where(publishedOnly());
   return row?.count ?? 0;
 }
 
@@ -358,7 +358,7 @@ export async function getDistinctCuisines(locale: string): Promise<string[]> {
   const rows = await db
     .selectDistinct({ cuisine: content.cuisine })
     .from(content)
-    .where(and(eq(content.status, 'published'), eq(content.locale, locale), sql`${content.cuisine} is not null`))
+    .where(and(publishedOnly(), sql`${content.cuisine} is not null`))
     .limit(20);
   return rows.map((r) => r.cuisine).filter(Boolean) as string[];
 }

@@ -7,7 +7,7 @@ const DEFAULT_IMAGE = '/logo.png';
 export function buildMetadata(content: Content): Metadata {
   const title = content.metaTitle ?? content.title;
   const description = content.metaDescription ?? content.quickAnswer ?? 'WorldWideRecipes culinary article.';
-  const url = content.canonicalUrl ?? `${BASE_URL}/${content.locale}/${content.type}/${content.slug}`;
+  const url = content.canonicalUrl ?? `${BASE_URL}/${content.type}/${content.slug}`;
   const image = content.ogImageUrl ?? content.imageUrl ?? DEFAULT_IMAGE;
 
   return {

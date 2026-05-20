@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import LocaleSwitcher from './LocaleSwitcher';
 import SearchOverlay from './SearchOverlay';
 
 const labels = [
@@ -15,7 +14,7 @@ const labels = [
   ['Contacto', 'contact'],
 ];
 
-export default function MobileMenu({ locale }: { locale: string }) {
+export default function MobileMenu() {
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,13 +28,12 @@ export default function MobileMenu({ locale }: { locale: string }) {
             Cerrar
           </button>
           <nav>
-            <SearchOverlay locale={locale} />
+            <SearchOverlay />
             {labels.map(([label, path]) => (
-              <a key={label} href={`/${locale}${path ? `/${path}` : ''}`}>{label}</a>
+              <a key={label} href={`/${path}`}>{label}</a>
             ))}
             <a href={process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef'} target="_blank" rel="noopener noreferrer">@tuvirtualchef</a>
           </nav>
-          <LocaleSwitcher locale={locale} />
         </div>
       ) : null}
     </div>

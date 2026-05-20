@@ -22,7 +22,7 @@ function escapeXml(value: string) {
 }
 
 function contentUrl(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.locale}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
 }
 
 function priorityFor(type: string) {
@@ -94,18 +94,18 @@ export async function buildMainSitemap(): Promise<string> {
 
   if (!rows.length) {
     return sitemapXml([
-      urlEntry(`${BASE_URL}/es`, new Date(), '1.0', 'daily'),
+      urlEntry(`${BASE_URL}/`, new Date(), '1.0', 'daily'),
     ]);
   }
 
-  const staticUrls = ['es', 'es-mx', 'en'].flatMap((locale) => [
-    `${BASE_URL}/${locale}`,
-    `${BASE_URL}/${locale}/recipes`,
-    `${BASE_URL}/${locale}/about`,
-    `${BASE_URL}/${locale}/contact`,
-    `${BASE_URL}/${locale}/privacy-policy`,
-    `${BASE_URL}/${locale}/terms`,
-  ]);
+  const staticUrls = [
+    `${BASE_URL}/`,
+    `${BASE_URL}/recipes`,
+    `${BASE_URL}/about`,
+    `${BASE_URL}/contact`,
+    `${BASE_URL}/privacy-policy`,
+    `${BASE_URL}/terms`,
+  ];
 
   const entries = [
     ...staticUrls.map((url) => urlEntry(url, new Date(), url.endsWith('/recipes') ? '0.8' : '0.6', 'weekly')),
@@ -158,9 +158,9 @@ async function buildFilterPagesSitemap() {
 
   const urls = new Set<string>([`${BASE_URL}/`]);
   for (const row of rows) {
-    urls.add(`${BASE_URL}/${row.locale}/recipes/tipo/${row.type}`);
-    if (row.cuisine) urls.add(`${BASE_URL}/${row.locale}/recipes/pais/${encodeURIComponent(row.cuisine)}`);
-    if (row.difficulty) urls.add(`${BASE_URL}/${row.locale}/recipes/dificultad/${row.difficulty}`);
+    urls.add(`${BASE_URL}/recipes/tipo/${row.type}`);
+    if (row.cuisine) urls.add(`${BASE_URL}/recipes/pais/${encodeURIComponent(row.cuisine)}`);
+    if (row.difficulty) urls.add(`${BASE_URL}/recipes/dificultad/${row.difficulty}`);
   }
 
   return sitemapXml([...urls].map((url) => urlEntry(url, new Date(), url === `${BASE_URL}/` ? '1.0' : '0.6', url === `${BASE_URL}/` ? 'daily' : 'monthly')));

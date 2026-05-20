@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function SearchOverlay({ locale }: { locale: string }) {
+export default function SearchOverlay() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function SearchOverlay({ locale }: { locale: string }) {
     const q = query.trim();
     if (!q) return;
     setOpen(false);
-    router.push(`/${locale}/search?q=${encodeURIComponent(q)}`);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
   }
 
   return (

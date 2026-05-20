@@ -158,6 +158,53 @@ function countWords(draft: ContentDraft): number {
   return JSON.stringify(draft).split(/\s+/).filter(Boolean).length;
 }
 
+function sanitizeContent(draft: ContentDraft): ContentDraft {
+  const clean = (obj: unknown): unknown => {
+    if (typeof obj === 'string') return obj.trim().replace(/\n{3,}/g, '\n\n');
+    if (Array.isArray(obj)) return obj.map(clean);
+    if (obj && typeof obj === 'object') {
+      return Object.fromEntries(
+        Object.entries(obj as Record<string, unknown>).map(([key, value]) => [key, clean(value)]),
+      );
+    }
+    return obj;
+  };
+
+  const sanitized = clean(draft) as ContentDraft;
+  const filterSteps = (steps: unknown) => {
+    if (!Array.isArray(steps)) return [];
+    return steps.filter((step) => {
+      if (!step || typeof step !== 'object') return false;
+      const text = (step as { text?: unknown }).text;
+      return typeof text === 'string' && text.trim().length > 30;
+    });
+  };
+
+  sanitized.body = {
+    ...sanitized.body,
+    ...(Array.isArray(sanitized.body?.steps) ? { steps: filterSteps(sanitized.body.steps) } : {}),
+    ...(Array.isArray(sanitized.body?.step_by_step_plan) ? { step_by_step_plan: filterSteps(sanitized.body.step_by_step_plan) } : {}),
+    ...(Array.isArray(sanitized.body?.how_to_start) ? { how_to_start: filterSteps(sanitized.body.how_to_start) } : {}),
+  };
+
+  return sanitized;
+}
+
+function assertValidRecipeSteps(draft: ContentDraft) {
+  if (draft.type !== 'recipe') return;
+  const steps = Array.isArray(draft.body?.steps) ? draft.body.steps : [];
+  const validSteps = steps.filter((step) => {
+    if (!step || typeof step !== 'object') return false;
+    const text = (step as { text?: unknown }).text;
+    return typeof text === 'string' && text.trim().length > 30;
+  });
+  draft.body.steps = validSteps;
+
+  if (validSteps.length < 4) {
+    throw new Error('Too few valid steps — regenerating');
+  }
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -183,6 +230,8 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
           improvements: quality?.improvements ?? [],
           criticalFixes: quality?.hard_fails ?? [],
         });
+        draft = sanitizeContent(draft);
+        assertValidRecipeSteps(draft);
       } catch (err) {
         await updateJob(job.id, {
           status: attempts < 2 ? 'running' : 'failed',
@@ -242,7 +291,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       });
     }
 
-    const affiliateDraft = await injectAffiliateLinks(draft, detectMarketFromLocale(draft.locale));
+    const affiliateDraft = sanitizeContent(await injectAffiliateLinks(draft, detectMarketFromLocale(draft.locale)));
     const fullBody = {
       ...affiliateDraft.body,
       images,

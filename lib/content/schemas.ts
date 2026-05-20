@@ -56,7 +56,7 @@ function minutesToDuration(minutes?: number | null) {
 
 function contentUrl(content: Content) {
   if (content.canonicalUrl) return content.canonicalUrl;
-  return `${BASE_URL}/${content.locale}/${content.type}/${content.slug}`;
+  return `${BASE_URL}/${content.type}/${content.slug}`;
 }
 
 function publisher() {

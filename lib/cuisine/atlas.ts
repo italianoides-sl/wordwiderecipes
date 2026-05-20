@@ -21,7 +21,7 @@ export const cuisineCountries: CuisineCountry[] = [
 ];
 
 export function countryHref(locale: string, country: CuisineCountry) {
-  return `/${locale}/recipes/pais/${country.slug}`;
+  return `/recipes/pais/${country.slug}`;
 }
 
 export function countryFromParam(param: string) {

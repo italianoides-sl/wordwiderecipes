@@ -1,4 +1,5 @@
 import { getFeaturedByType } from '@/lib/db/queries';
+import { contentHref } from '@/lib/content/routes';
 import { withDbFallback } from '@/lib/db/safe-query';
 import type { Locale } from '@/lib/db/schema';
 
@@ -53,7 +54,7 @@ export default async function FeaturedIngredient({ locale = 'es' }: { locale?: s
             </div>
             <h3 className="if-name">{ingredient.title}</h3>
             {description ? <p className="if-description">{description}</p> : null}
-            <a className="if-cta" href={`/${locale}/${ingredient.type}/${ingredient.slug}`}>
+            <a className="if-cta" href={contentHref(ingredient)}>
               Leer ingrediente <span>→</span>
             </a>
           </div>
