@@ -310,6 +310,11 @@ export type AffiliateLinkRecord = {
 };
 
 const databaseUrl = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
-const client = postgres(databaseUrl, { prepare: false, max: 1, connect_timeout: 2 });
+const client = postgres(databaseUrl, {
+  prepare: false,
+  max: 1,
+  connect_timeout: 10,
+  connection: { statement_timeout: 30000 },
+});
 
 export const db = drizzle(client);

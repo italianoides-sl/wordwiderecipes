@@ -1,4 +1,4 @@
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { generateJSON } from '@/lib/ai/openai';
 import { runContentPipeline } from '@/lib/content/pipeline';
 import { content, db, trendingTopics } from '@/lib/db/schema';
@@ -109,14 +109,19 @@ The trends array must contain exactly 12 items.
         title: content.title,
         locale: content.locale,
       })
-      .from(content);
+      .from(content)
+      .where(eq(content.status, 'published'))
+      .orderBy(desc(content.publishedAt))
+      .limit(200);
 
     const existingTopicsRows = await db
       .select({
         topic: trendingTopics.topic,
         locale: trendingTopics.localePrimary,
       })
-      .from(trendingTopics);
+      .from(trendingTopics)
+      .orderBy(desc(trendingTopics.detectedAt))
+      .limit(50);
 
     const existingSlugs = new Set(existingContent.map((row) => `${row.locale}:${row.slug}`));
     const existingTopics = existingTopicsRows
