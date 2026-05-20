@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import BrowseContentPage from '@/components/content/BrowseContentPage';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 
@@ -13,7 +12,6 @@ export function generateMetadata() {
 }
 
 export default async function RecipesIndexPage({ searchParams }: { searchParams?: { page?: string } }) {
-  const locale = headers().get('x-locale') ?? 'es';
   const page = Math.max(Number(searchParams?.page ?? 0), 0);
-  return <BrowseContentPage locale={locale} page={page} />;
+  return <BrowseContentPage page={page} />;
 }

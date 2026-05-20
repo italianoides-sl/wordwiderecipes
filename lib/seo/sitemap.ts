@@ -12,7 +12,7 @@ export async function buildSitemapEntries() {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
   return rows.map((row) => ({
-    url: `${baseUrl}/${row.locale}/${row.type}/${row.slug}`,
+    url: `${baseUrl}/${row.type}/${row.slug}`,
     lastmod: row.updatedAt?.toISOString() ?? new Date().toISOString(),
   }));
 }

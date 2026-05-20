@@ -3,19 +3,16 @@ import ContentGrid from './ContentGrid';
 import { filterHref, type FilterParams } from '@/lib/content/routes';
 import { getContentByFiltersPaged } from '@/lib/db/queries';
 import { withDbFallback } from '@/lib/db/safe-query';
-import type { Locale } from '@/lib/db/schema';
 
 export default async function BrowseContentPage({
-  locale,
   filters = {},
   page = 0,
 }: {
-  locale: string;
   filters?: FilterParams;
   page?: number;
 }) {
   const result = await withDbFallback(
-    getContentByFiltersPaged(locale as Locale, filters, page, 12),
+    getContentByFiltersPaged(filters, page, 12),
     { results: [], total: 0, page, pageSize: 12, hasMore: false },
     'Browse content',
   );

@@ -6,7 +6,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.a
 export const dynamic = 'force-dynamic';
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.locale}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
 }
 
 export async function GET() {
@@ -51,9 +51,9 @@ export async function GET() {
     'Editorial approach: AI-assisted drafting with OpenAI, quality validation, human editorial standards, chef perspective, Unsplash photo attribution.',
     '',
     '## Primary URLs',
-    `- Homepage: ${BASE_URL}/es`,
-    `- Browse: ${BASE_URL}/es/recipes`,
-    `- Search: ${BASE_URL}/es/search`,
+    `- Homepage: ${BASE_URL}/`,
+    `- Browse: ${BASE_URL}/recipes`,
+    `- Search: ${BASE_URL}/search`,
     `- Sitemap: ${BASE_URL}/sitemap.xml`,
     `- AEO feed: ${BASE_URL}/aeo.json`,
     `- GEO feed: ${BASE_URL}/geo.json`,

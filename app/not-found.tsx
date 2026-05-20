@@ -14,7 +14,7 @@ export default function NotFound() {
               <path d="M4 10h12M11 5l5 5-5 5"/>
             </svg>
           </Link>
-          <Link href="/es/recipes" className="da-btn da-btn--ghost">
+          <Link href="/recipes" className="da-btn da-btn--ghost">
             Explorar recetas
           </Link>
         </div>

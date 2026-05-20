@@ -190,7 +190,7 @@ export async function searchContent(
   return { results, total, page, pageSize };
 }
 
-export async function getContentByFiltersPaged(locale: Locale, filters: FilterParams = {}, page = 0, pageSize = 12) {
+export async function getContentByFiltersPaged(filters: FilterParams = {}, page = 0, pageSize = 12) {
   const safePage = Math.max(page, 0);
   const safePageSize = Math.min(Math.max(pageSize, 1), 48);
   const whereParts: SQL[] = [publishedOnly()];

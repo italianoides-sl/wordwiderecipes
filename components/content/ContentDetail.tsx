@@ -48,14 +48,13 @@ function JsonLd({ id, data }: { id: string; data?: Record<string, unknown> | nul
 export default function ContentDetail({ content, related }: { content: Content; related: Content[] }) {
   const typeFilter = typeToFilterSegment(content.type as ContentType);
   const countrySlug = countrySlugForCuisine(content.cuisine);
-  const localeRoot = `/${content.locale}`;
-  const typeHref = `${localeRoot}/recipes/tipo/${typeFilter}`;
-  const cuisineHref = countrySlug ? `${localeRoot}/recipes/pais/${countrySlug}` : null;
+  const typeHref = `/recipes/tipo/${typeFilter}`;
+  const cuisineHref = countrySlug ? `/recipes/pais/${countrySlug}` : null;
   const breadcrumb = content.schemaBreadcrumb ?? {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${BASE_URL}${localeRoot}` },
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL },
       { '@type': 'ListItem', position: 2, name: content.type, item: `${BASE_URL}${typeHref}` },
       { '@type': 'ListItem', position: 3, name: content.cuisine ?? content.title, item: `${BASE_URL}${contentHref(content)}` },
     ],
@@ -73,7 +72,7 @@ export default function ContentDetail({ content, related }: { content: Content; 
         <article className="rp-main content-detail">
           <nav className="rp-breadcrumb" aria-label="Migas de pan">
             <ol>
-              <li><a href={localeRoot}>Inicio</a><span className="rp-bc-sep">›</span></li>
+              <li><a href="/">Inicio</a><span className="rp-bc-sep">›</span></li>
               <li><a href={typeHref}>{content.type}</a><span className="rp-bc-sep">›</span></li>
               {content.cuisine ? (
                 <li>

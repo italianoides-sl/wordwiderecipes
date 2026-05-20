@@ -6,7 +6,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.a
 export const dynamic = 'force-dynamic';
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.locale}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
 }
 
 export async function GET() {

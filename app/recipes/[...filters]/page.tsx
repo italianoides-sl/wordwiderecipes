@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import BrowseContentPage from '@/components/content/BrowseContentPage';
 import { parseFilters } from '@/lib/content/routes';
 import { buildPageMetadata } from '@/lib/seo/metadata';
@@ -20,7 +19,6 @@ export default async function RecipeFiltersPage({
   params: { filters?: string[] };
   searchParams?: { page?: string };
 }) {
-  const locale = headers().get('x-locale') ?? 'es';
   const page = Math.max(Number(searchParams?.page ?? 0), 0);
-  return <BrowseContentPage locale={locale} filters={parseFilters(params.filters ?? [])} page={page} />;
+  return <BrowseContentPage filters={parseFilters(params.filters ?? [])} page={page} />;
 }
