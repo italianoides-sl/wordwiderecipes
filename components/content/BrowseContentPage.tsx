@@ -38,23 +38,29 @@ export default async function BrowseContentPage({
         </p>
       </header>
 
-      <FilterBar filters={filters} />
+      <div id="filter-bar" className="wwr-filter-sticky-shell">
+        <div className="wwr-filter-sticky-inner">
+          <FilterBar filters={filters} />
+        </div>
+      </div>
 
-      {hasFilters && !result.results.length ? (
-        <section className="bp-empty">
-          <span className="bp-empty-eyebrow">Sin resultados</span>
-          <h2>Nada coincide con esos filtros.</h2>
-          <p>Prueba a quitar uno o explora <a href="/recipes">todas las recetas</a>.</p>
-        </section>
-      ) : !result.results.length ? (
-        <section className="bp-empty">
-          <span className="bp-empty-eyebrow">Próximamente</span>
-          <h2>Estamos generando contenido nuevo cada día.</h2>
-          <p>Vuelve mañana — publicamos cada mañana a las 8:00.</p>
-        </section>
-      ) : (
-        <ContentGrid rows={result.results} />
-      )}
+      <div className="wwr-content-grid-shell">
+        {hasFilters && !result.results.length ? (
+          <section className="bp-empty">
+            <span className="bp-empty-eyebrow">Sin resultados</span>
+            <h2>Nada coincide con esos filtros.</h2>
+            <p>Prueba a quitar uno o explora <a href="/recipes">todas las recetas</a>.</p>
+          </section>
+        ) : !result.results.length ? (
+          <section className="bp-empty">
+            <span className="bp-empty-eyebrow">Próximamente</span>
+            <h2>Estamos generando contenido nuevo cada día.</h2>
+            <p>Vuelve mañana — publicamos cada mañana a las 8:00.</p>
+          </section>
+        ) : (
+          <ContentGrid rows={result.results} />
+        )}
+      </div>
 
       {(page > 0 || result.hasMore) ? (
         <nav className="pagination-nav" aria-label="Paginación">

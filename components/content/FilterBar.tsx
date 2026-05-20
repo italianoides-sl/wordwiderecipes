@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { cuisineCountries } from '@/lib/cuisine/atlas';
 import { filterHref } from '@/lib/content/routes';
@@ -29,14 +31,39 @@ function same(a?: string, b?: string) {
 
 export default function FilterBar({ filters }: { filters: FilterParams }) {
   const router = useRouter();
+  const [search, setSearch] = useState('');
   const hasFilters = Boolean(filters.type || filters.country || filters.diet || filters.difficulty);
+
+  useEffect(() => {
+    if (window.location.hash === '#browse-search') {
+      document.getElementById('browse-search')?.focus();
+    }
+  }, []);
 
   function go(next: FilterParams) {
     router.push(filterHref(next));
   }
 
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = search.trim();
+    if (value) router.push(`/search?q=${encodeURIComponent(value)}`);
+  }
+
   return (
     <div className="filter-bar wwr-filter-bar" aria-label="Filtros de contenido">
+      <form className="wwr-filter-search" onSubmit={handleSearch}>
+        <input
+          id="browse-search"
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar recetas, técnicas, ingredientes..."
+          aria-label="Buscar recetas, técnicas e ingredientes"
+        />
+        <button type="submit">Buscar</button>
+      </form>
+
       <div className="filter-group wwr-filter-row">
         <span className="wwr-filter-label">Tipo</span>
         {typeOptions.map((option) => (

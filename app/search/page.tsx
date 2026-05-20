@@ -1,9 +1,8 @@
-import { headers } from 'next/headers';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import ContentGrid from '@/components/content/ContentGrid';
+import { content, db } from '@/lib/db/schema';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import type { Content } from '@/lib/db/schema';
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,18 +14,31 @@ export function generateMetadata() {
   });
 }
 
-async function search(locale: string, query: string) {
-  if (!query.trim()) return { results: [] as Content[], total: 0, page: 0, hasMore: false };
-  const url = `${BASE_URL}/api/search?q=${encodeURIComponent(query)}&locale=${encodeURIComponent(locale)}&page=0`;
-  const response = await fetch(url, { cache: 'no-store' }).catch(() => null);
-  if (!response?.ok) return { results: [] as Content[], total: 0, page: 0, hasMore: false };
-  return response.json() as Promise<{ results: Content[]; total: number; page: number; hasMore: boolean }>;
+async function search(query: string): Promise<Content[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const like = `%${q}%`;
+
+  return db
+    .select()
+    .from(content)
+    .where(
+      and(
+        eq(content.status, 'published'),
+        sql`(
+          ${content.title} ilike ${like}
+          OR ${content.metaDescription} ilike ${like}
+          OR ${content.cuisine} ilike ${like}
+        )`,
+      ),
+    )
+    .orderBy(desc(content.publishedAt))
+    .limit(24);
 }
 
 export default async function SearchPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const locale = headers().get('x-locale') ?? 'es';
   const query = searchParams?.q?.trim() ?? '';
-  const result = await search(locale, query);
+  const results = await search(query);
 
   return (
     <main className="wwr-page directory-page">
@@ -34,17 +46,17 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
         <span className="directory-flag" aria-hidden="true">⌕</span>
         <div>
           <p className="directory-kicker">Busqueda</p>
-          <h1>{query ? `${result.total} resultados para "${query}"` : 'Buscar en WorldWideRecipes'}</h1>
+          <h1>{query ? `${results.length} resultados para "${query}"` : 'Buscar en WorldWideRecipes'}</h1>
           <p>{query ? 'Resultados publicados desde la base de datos.' : 'Busca recetas, tecnicas, ingredientes o cocinas.'}</p>
         </div>
       </section>
 
-      {query && result.results.length ? <ContentGrid rows={result.results} /> : null}
+      {query && results.length ? <ContentGrid rows={results} /> : null}
 
-      {query && !result.results.length ? (
+      {query && !results.length ? (
         <section className="empty-state">
           <h2>No encontramos resultados para &quot;{query}&quot;</h2>
-          <p>Prueba con una cocina, ingrediente o tecnica distinta, o explora por categoria.</p>
+          <p>Prueba con otro termino.</p>
           <a href="/recipes">Explorar categorias</a>
         </section>
       ) : null}

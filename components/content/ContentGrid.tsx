@@ -32,7 +32,8 @@ export default function ContentGrid({ rows }: { rows: Content[] }) {
               <img className="wwr-card-image" src={item.imageUrl} alt={item.imageAlt ?? item.title} />
             ) : (
               <div className="directory-card-fallback wwr-card-image wwr-card-placeholder" aria-hidden="true">
-                <span>{typeIcon(item.type)}</span>
+                <span className="wwr-card-placeholder-icon">{typeIcon(item.type)}</span>
+                <span className="wwr-card-placeholder-label">{item.cuisine?.toUpperCase() ?? 'WORLDWIDERECIPES'}</span>
               </div>
             )}
             <div className="wwr-card-body">

@@ -41,6 +41,14 @@ export default function Header() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/recipes#browse-search"
+            className="da-nav-link da-nav-search"
+            aria-label="Buscar"
+            onClick={() => setMobileOpen(false)}
+          >
+            🔍
+          </Link>
           <a
             href={tiktokUrl}
             target="_blank"

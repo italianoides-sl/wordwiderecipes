@@ -15,6 +15,17 @@ function array<T = Record<string, unknown>>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+type RenderStep = Record<string, unknown> & { text: string };
+
+function validSteps(value: unknown): RenderStep[] {
+  return array<Record<string, unknown>>(value)
+    .map((step) => ({
+      ...step,
+      text: text(step.text).trim(),
+    }))
+    .filter((step) => step.text.length > 10);
+}
+
 function titleFromKey(key: string) {
   const label = key
     .replaceAll('_', ' ')
@@ -102,7 +113,7 @@ function RecipeBody({ content }: { content: Content }) {
   const body = content.body ?? {};
   const links = content.affiliateLinks ?? [];
   const ingredients = array<Record<string, unknown>>(body.ingredients);
-  const steps = array<Record<string, unknown>>(body.steps);
+  const steps = validSteps(body.steps);
   const variations = array<Record<string, unknown>>(body.variations);
 
   return (
@@ -136,26 +147,29 @@ function RecipeBody({ content }: { content: Content }) {
       ) : null}
       <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
       {steps.length ? (
-        <section className="body-section">
+        <section className="body-section recipe-steps-section">
           <h2>Paso a paso</h2>
-          <ol className="numbered-steps">
+          <div className="wwr-steps-list">
             {steps.map((step, index) => (
               <Fragment key={`${text(step.title)}-${index}`}>
-                <li>
-                  {step.title ? <h3>{text(step.title)}</h3> : null}
-                  <p>{text(step.text ?? step)}</p>
-                  {step.tip ? <small>{text(step.tip)}</small> : null}
-                  {step.sensory_cue ? <small>{text(step.sensory_cue)}</small> : null}
-                </li>
+                <div className="wwr-step">
+                  <div className="wwr-step-number">{index + 1}</div>
+                  <div className="wwr-step-content">
+                    {step.title ? <h3>{text(step.title)}</h3> : null}
+                    <p>{step.text}</p>
+                    {step.tip ? <p className="wwr-step-tip">{text(step.tip)}</p> : null}
+                    {step.sensory_cue ? <p className="wwr-step-tip">{text(step.sensory_cue)}</p> : null}
+                  </div>
+                </div>
                 {index === 3 ? (
                   <Fragment key={`ad-step-${index}`}>
-                    <li className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></li>
-                    <li className="body-ad-item"><AdUnit slot="0987654321" format="auto" /></li>
+                    <div className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></div>
+                    <div className="body-ad-item"><AdUnit slot="0987654321" format="auto" /></div>
                   </Fragment>
                 ) : null}
               </Fragment>
             ))}
-          </ol>
+          </div>
         </section>
       ) : null}
       {variations.length ? <GenericField name="variations" value={variations} /> : null}
@@ -174,7 +188,7 @@ function TechniqueBody({ content }: { content: Content }) {
   const body = content.body ?? {};
   const links = content.affiliateLinks ?? [];
   const equipment = array<Record<string, unknown>>(body.equipment);
-  const steps = array<Record<string, unknown>>(body.steps);
+  const steps = validSteps(body.steps);
   const errors = array<Record<string, unknown>>(body.errors);
 
   return (
@@ -200,18 +214,21 @@ function TechniqueBody({ content }: { content: Content }) {
       {steps.length ? (
         <section className="body-section">
           <h2>Pasos</h2>
-          <ol className="numbered-steps">
+          <div className="wwr-steps-list">
             {steps.map((step, index) => (
               <Fragment key={`${text(step.title)}-${index}`}>
-                <li>
-                  {step.title ? <h3>{text(step.title)}</h3> : null}
-                  <p>{text(step.text ?? step)}</p>
-                  {step.common_mistake ? <small>Error comun: {text(step.common_mistake)}</small> : null}
-                </li>
-                {index === 3 ? <li className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></li> : null}
+                <div className="wwr-step">
+                  <div className="wwr-step-number">{index + 1}</div>
+                  <div className="wwr-step-content">
+                    {step.title ? <h3>{text(step.title)}</h3> : null}
+                    <p>{step.text}</p>
+                    {step.common_mistake ? <p className="wwr-step-tip">Error comun: {text(step.common_mistake)}</p> : null}
+                  </div>
+                </div>
+                {index === 3 ? <div className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></div> : null}
               </Fragment>
             ))}
-          </ol>
+          </div>
         </section>
       ) : null}
       {errors.length ? (
