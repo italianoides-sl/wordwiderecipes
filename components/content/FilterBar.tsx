@@ -36,12 +36,13 @@ export default function FilterBar({ filters }: { filters: FilterParams }) {
   }
 
   return (
-    <div className="filter-bar" aria-label="Filtros de contenido">
-      <div className="filter-group">
-        <span>Tipo</span>
+    <div className="filter-bar wwr-filter-bar" aria-label="Filtros de contenido">
+      <div className="filter-group wwr-filter-row">
+        <span className="wwr-filter-label">Tipo</span>
         {typeOptions.map((option) => (
           <button
             key={option.value}
+            className={`wwr-filter-pill${same(filters.type, option.value) ? ' active' : ''}`}
             type="button"
             data-active={same(filters.type, option.value) ? 'true' : undefined}
             onClick={() => go({ ...filters, type: same(filters.type, option.value) ? undefined : option.value })}
@@ -51,11 +52,12 @@ export default function FilterBar({ filters }: { filters: FilterParams }) {
         ))}
       </div>
 
-      <div className="filter-group">
-        <span>Pais</span>
+      <div className="filter-group wwr-filter-row">
+        <span className="wwr-filter-label">Pais</span>
         {cuisineCountries.map((country) => (
           <button
             key={country.slug}
+            className={`wwr-filter-pill${same(filters.country, country.slug) ? ' active' : ''}`}
             type="button"
             data-active={same(filters.country, country.slug) ? 'true' : undefined}
             onClick={() => go({
@@ -69,11 +71,12 @@ export default function FilterBar({ filters }: { filters: FilterParams }) {
         ))}
       </div>
 
-      <div className="filter-group">
-        <span>Dieta</span>
+      <div className="filter-group wwr-filter-row">
+        <span className="wwr-filter-label">Dieta</span>
         {dietOptions.map((diet) => (
           <button
             key={diet}
+            className={`wwr-filter-pill${same(filters.diet, diet) ? ' active' : ''}`}
             type="button"
             data-active={same(filters.diet, diet) ? 'true' : undefined}
             onClick={() => go({ ...filters, diet: same(filters.diet, diet) ? undefined : diet })}
@@ -83,11 +86,12 @@ export default function FilterBar({ filters }: { filters: FilterParams }) {
         ))}
       </div>
 
-      <div className="filter-group">
-        <span>Dificultad</span>
+      <div className="filter-group wwr-filter-row">
+        <span className="wwr-filter-label">Dificultad</span>
         {difficultyOptions.map((option) => (
           <button
             key={option.value}
+            className={`wwr-filter-pill${same(filters.difficulty, option.value) ? ' active' : ''}`}
             type="button"
             data-active={same(filters.difficulty, option.value) ? 'true' : undefined}
             onClick={() => go({ ...filters, difficulty: same(filters.difficulty, option.value) ? undefined : option.value })}

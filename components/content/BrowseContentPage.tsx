@@ -22,7 +22,7 @@ export default async function BrowseContentPage({
   const hasFilters = Boolean(filters.type || filters.country || filters.diet || filters.difficulty);
 
   return (
-    <main className="wwr-page directory-page">
+    <main className="wwr-page directory-page wwr-browse-page">
       <header className="bp-header">
         <div className="bp-bc">
           <a href="/">Inicio</a>
