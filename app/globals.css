@@ -5979,3 +5979,242 @@ img { display: block; max-width: 100%; }
     padding-right: 48px;
   }
 }
+
+/* Mobile layout hardening: keep browse/detail pages readable and prevent horizontal drift. */
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .da-nav {
+    background: rgba(26, 18, 8, 0.96);
+  }
+
+  .da-nav-inner {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .da-logo {
+    min-width: 0;
+    max-width: calc(100vw - 72px);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .da-logo span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .da-nav-links {
+    background: rgba(26, 18, 8, 0.98);
+    max-height: calc(100vh - 52px);
+    overflow-y: auto;
+  }
+
+  .wwr-page,
+  .directory-page,
+  .wwr-browse-page,
+  .rp-shell {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .bp-header {
+    padding: 32px 0 20px;
+  }
+
+  .bp-h1 {
+    font-size: clamp(30px, 11vw, 42px);
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .bp-lede,
+  .directory-hero p:last-child {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .wwr-filter-sticky-shell {
+    position: relative;
+    top: auto;
+    z-index: 2;
+    margin-left: 0;
+    margin-right: 0;
+    padding-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .wwr-filter-sticky-inner {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .wwr-filter-bar {
+    overflow: visible;
+    padding-top: 10px;
+  }
+
+  .wwr-filter-search {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 12px;
+    padding-top: 0;
+  }
+
+  .wwr-filter-search input {
+    font-size: 16px;
+    padding: 11px 12px;
+  }
+
+  .wwr-filter-search button {
+    padding: 11px 14px;
+  }
+
+  .wwr-filter-row {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 0 0 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .wwr-filter-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .wwr-filter-label {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: auto;
+    padding-right: 10px;
+    background: #1A1208;
+  }
+
+  .wwr-filter-pill {
+    flex: 0 0 auto;
+  }
+
+  .filter-clear {
+    margin-top: 4px;
+  }
+
+  .wwr-content-grid-shell {
+    padding-top: 10px;
+  }
+
+  .directory-grid,
+  .wwr-content-grid {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px;
+    padding-top: 0;
+    margin-top: 10px;
+  }
+
+  .directory-card,
+  .wwr-content-card {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
+  .wwr-card-body {
+    min-width: 0;
+    padding: 13px 14px 15px;
+  }
+
+  .wwr-card-title,
+  .directory-card h2,
+  .directory-card h3 {
+    font-size: 18px;
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+  }
+
+  .directory-card p {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .rp-layout {
+    width: 100%;
+    max-width: 100%;
+    padding-top: 24px;
+    gap: 24px;
+  }
+
+  .rp-main,
+  .content-detail {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .body-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wwr-step {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .wwr-step-number {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .wwr-step-content h3 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .wwr-step-content p,
+  .content-detail p,
+  .content-detail .body-renderer li,
+  .content-detail td {
+    font-size: 16px;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+  }
+
+  .ingredient-list,
+  .wwr-steps-list {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ingredient-list li,
+  .body-card,
+  .quick-answer-box,
+  .chef-secrets-box,
+  .chef-note {
+    padding: 14px;
+  }
+
+  .content-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .body-inline-image,
+  .rp-hero-frame {
+    width: 100%;
+    max-width: 100%;
+  }
+}
