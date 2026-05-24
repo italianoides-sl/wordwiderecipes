@@ -11,12 +11,12 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.a
 const LOGO_URL = `${BASE_URL}/logo.png`;
 
 function stripUndefined<T>(value: T): T {
-  if (Array.isArray(value)) return value.map(stripUndefined).filter((item) => item !== undefined) as T;
+  if (Array.isArray(value)) return value.map(stripUndefined).filter((item) => item !== undefined && item !== null) as T;
   if (!value || typeof value !== 'object') return value;
 
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([, entry]) => entry !== undefined)
+      .filter(([, entry]) => entry !== undefined && entry !== null)
       .map(([key, entry]) => [key, stripUndefined(entry)]),
   ) as T;
 }
@@ -46,7 +46,9 @@ function textFromObject(value: unknown): string {
 }
 
 function numberField(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  return undefined;
 }
 
 function minutesToDuration(minutes?: number | null) {
@@ -78,12 +80,55 @@ function author(content: Content) {
   };
 }
 
+function recipeAuthor() {
+  return {
+    '@type': 'Organization',
+    name: 'WorldWideRecipes',
+    url: BASE_URL,
+  };
+}
+
+function recipeIngredient(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value !== 'object') return String(value);
+
+  const ingredient = value as Record<string, unknown>;
+  const amount = textFromObject(ingredient.amount).trim();
+  const unit = textFromObject(ingredient.unit).trim();
+  const name = textFromObject(ingredient.name).trim();
+  const text = [amount, unit, name].filter(Boolean).join(' ');
+
+  return text || textFromObject(value);
+}
+
+function stepName(step: unknown): string | undefined {
+  if (!step || typeof step !== 'object') return undefined;
+  const record = step as Record<string, unknown>;
+  return textFromObject(record.title ?? record.name).trim() || undefined;
+}
+
+function aggregateRating(value: unknown) {
+  if (!value || typeof value !== 'object') return undefined;
+  const rating = value as Record<string, unknown>;
+  const ratingValue = numberField(rating.ratingValue ?? rating.rating_value ?? rating.value);
+  const ratingCount = numberField(rating.ratingCount ?? rating.rating_count ?? rating.count);
+  if (!ratingValue || !ratingCount) return undefined;
+
+  return {
+    '@type': 'AggregateRating',
+    ratingValue,
+    ratingCount,
+  };
+}
+
 export function buildRecipeSchema(content: Content): RecipeSchema {
   const data = body(content);
-  const ingredients = textList(data.ingredients);
+  const ingredients = arrayField(data.ingredients).map(recipeIngredient).filter(Boolean);
   const steps = arrayField(data.steps).map((step, index) => ({
     '@type': 'HowToStep',
     position: index + 1,
+    name: stepName(step),
     text: textFromObject(step),
   }));
 
@@ -91,27 +136,27 @@ export function buildRecipeSchema(content: Content): RecipeSchema {
     '@context': 'https://schema.org',
     '@type': 'Recipe',
     name: content.title,
-    image: content.imageUrl ? [content.imageUrl] : undefined,
-    author: author(content),
+    description: content.metaDescription ?? content.quickAnswer,
+    image: content.imageUrl,
+    author: recipeAuthor(),
     datePublished: content.publishedAt?.toISOString(),
     dateModified: content.updatedAt?.toISOString(),
-    description: content.metaDescription ?? content.quickAnswer,
-    recipeCuisine: content.cuisine,
+    prepTime: minutesToDuration(numberField(data.prepTimeMins ?? data.prep_time_mins)) ?? 'PT20M',
+    cookTime: minutesToDuration(numberField(data.cookTimeMins ?? data.cook_time_mins)),
+    totalTime: minutesToDuration(content.totalTimeMins),
+    recipeYield: data.recipeYield ?? data.recipe_yield ?? data.servings ?? '4 porciones',
     recipeCategory: content.category,
-    keywords: content.dietTags?.join(', '),
+    recipeCuisine: content.cuisine,
     recipeIngredient: ingredients,
     recipeInstructions: steps,
-    totalTime: minutesToDuration(content.totalTimeMins),
-    prepTime: minutesToDuration(numberField(data.prepTimeMins ?? data.prep_time_mins)),
-    cookTime: minutesToDuration(numberField(data.cookTimeMins ?? data.cook_time_mins)),
-    recipeYield: data.recipeYield ?? data.servings,
+    keywords: content.dietTags?.join(', '),
     nutrition: data.nutrition
       ? {
           '@type': 'NutritionInformation',
           ...(data.nutrition as Record<string, unknown>),
         }
       : undefined,
-    aggregateRating: null,
+    aggregateRating: aggregateRating(data.aggregateRating ?? data.aggregate_rating ?? data.rating),
     mainEntityOfPage: contentUrl(content),
   });
 }
@@ -121,7 +166,7 @@ export function buildHowToSchema(content: Content): HowToSchema {
   const steps = arrayField(data.steps ?? content.stepsSummary).map((step, index) => ({
     '@type': 'HowToStep',
     position: index + 1,
-    name: typeof step === 'object' && step ? (step as Record<string, unknown>).name : undefined,
+    name: stepName(step),
     text: textFromObject(step),
   }));
 

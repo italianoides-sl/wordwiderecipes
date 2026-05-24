@@ -1,0 +1,66 @@
+name: Generate Content (Direct Script)
+
+on:
+  # Daily at 09:00 UTC (10:00 Madrid / 04:00 CDMX)
+  schedule:
+    - cron: '0 9 * * *'
+  # Manual trigger from GitHub UI — also accepts a custom topic count
+  workflow_dispatch:
+    inputs:
+      topics_count:
+        description: 'Number of articles to generate (default: 10)'
+        required: false
+        default: '10'
+
+jobs:
+  generate-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60   # pipeline can take ~3–5 min/article × 10 = up to 50 min
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate content
+        env:
+          DATABASE_URL:          ${{ secrets.DATABASE_URL }}
+          OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
+          UNSPLASH_ACCESS_KEY:   ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          NEXT_PUBLIC_BASE_URL:  ${{ secrets.BASE_URL }}
+          # Optional overrides
+          AI_MODEL:              ${{ secrets.AI_MODEL }}
+          CONTENT_PROMPT_VERSION: ${{ secrets.CONTENT_PROMPT_VERSION }}
+          CRON_SECRET:           ${{ secrets.CRON_SECRET }}
+          REVALIDATE_SECRET:     ${{ secrets.REVALIDATE_SECRET }}
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          TOPICS_COUNT:          ${{ github.event.inputs.topics_count || '10' }}
+        run: npx tsx scripts/generate-content.ts
+
+      - name: Update homepage
+        if: success()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE_URL:    ${{ secrets.BASE_URL }}
+        run: |
+          curl -sf -X GET "$BASE_URL/api/cron/update-homepage" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 120 || echo "⚠️  Homepage update failed (non-blocking)"
+
+      - name: Update sitemaps
+        if: success()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE_URL:    ${{ secrets.BASE_URL }}
+        run: |
+          curl -sf -X GET "$BASE_URL/api/cron/update-sitemaps" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 120 || echo "⚠️  Sitemap update failed (non-blocking)"

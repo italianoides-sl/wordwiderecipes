@@ -93,7 +93,22 @@ function recipePrompt(topic: string, locale: string, uniqueAngle: string) {
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: cultural opening 100+ words · ingredients with local names, quality notes, substitutes, affiliate_hint for Amazon items · min 10 steps with WHY and sensory cues · 3 variations · min 6 FAQ (60-100w answers) · personal_opinion 60-100w first-person chef reflection · citation_summary 100w
+Rules: cultural opening 100+ words · ingredients with local names, quality notes, substitutes, affiliate_hint for Amazon items · min 10 steps with WHY and sensory cues · 3 variations · personal_opinion 60-100w first-person chef reflection · citation_summary 100w
+
+Generate 6 FAQ questions following this exact pattern.
+These questions MUST be included for every recipe:
+1. ¿Se puede congelar [plato]?
+2. ¿Cuánto tiempo dura [plato] en la nevera?
+3. ¿Se puede hacer [plato] sin [main allergen]?
+4. ¿Cuál es el origen de [plato]?
+5. ¿Qué acompañamientos van bien con [plato]?
+6. ¿Cuáles son los errores más comunes al hacer [plato]?
+
+Replace [plato] with the exact dish name from the topic or title.
+Replace [main allergen] with the most relevant allergen or restrictive ingredient for this dish, such as gluten, huevo, leche, queso, frutos secos, marisco, mantequilla or harina.
+Each FAQ answer: 60-100 words, conversational, direct.
+Start answers directly. Never start with "Gran pregunta", "Claro que sí", "Sí," or "No,".
+Answers must be self-contained and readable without the question.
 
 CRITICAL: Every single step must have:
 - title: minimum 3 words

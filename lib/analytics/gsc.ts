@@ -1,6 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { and, eq } from 'drizzle-orm';
 import { content, db, seoMetrics } from '@/lib/db/schema';
+import { getGoogleServiceAccountCredentials } from '@/lib/google/service-account';
 
 type SearchConsoleRow = {
   keys?: string[];
@@ -17,11 +18,11 @@ function isoDate(daysAgo: number) {
 }
 
 function getAuth() {
-  const rawCredentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!rawCredentials) return null;
+  const credentials = getGoogleServiceAccountCredentials();
+  if (!credentials) return null;
 
   return new GoogleAuth({
-    credentials: JSON.parse(rawCredentials),
+    credentials,
     scopes: ['https://www.googleapis.com/auth/webmasters.readonly'],
   });
 }

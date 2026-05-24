@@ -1,9 +1,9 @@
-import Script from 'next/script';
 import dynamic from 'next/dynamic';
 import BodyRenderer from './BodyRenderer';
 import ShareActions from './ShareActions';
 import TikTokCTA from '@/components/recipe/TikTokCTA';
 import { contentHref, countrySlugForCuisine, typeToFilterSegment } from '@/lib/content/routes';
+import { buildSchemas } from '@/lib/content/schemas';
 import type { Content, ContentType } from '@/lib/db/schema';
 
 const Sidebar = dynamic(() => import('@/components/recipe/Sidebar'), { ssr: false, loading: () => null });
@@ -42,7 +42,14 @@ function imageAttribution(content: Content) {
 
 function JsonLd({ id, data }: { id: string; data?: Record<string, unknown> | null }) {
   if (!data) return null;
-  return <Script id={id} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
+  return (
+    <script
+      id={id}
+      type="application/ld+json"
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
 }
 
 export default function ContentDetail({ content, related }: { content: Content; related: Content[] }) {
@@ -50,7 +57,8 @@ export default function ContentDetail({ content, related }: { content: Content; 
   const countrySlug = countrySlugForCuisine(content.cuisine);
   const typeHref = `/recipes/tipo/${typeFilter}`;
   const cuisineHref = countrySlug ? `/recipes/pais/${countrySlug}` : null;
-  const breadcrumb = content.schemaBreadcrumb ?? {
+  const schemas = buildSchemas(content);
+  const breadcrumb = content.schemaBreadcrumb ?? schemas.breadcrumb ?? {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
@@ -62,10 +70,10 @@ export default function ContentDetail({ content, related }: { content: Content; 
 
   return (
     <main className="rp-shell">
-      <JsonLd id={`schema-article-${content.id}`} data={content.schemaArticle} />
-      <JsonLd id={`schema-recipe-${content.id}`} data={content.schemaRecipe} />
-      <JsonLd id={`schema-howto-${content.id}`} data={content.schemaHowto} />
-      <JsonLd id={`schema-faq-${content.id}`} data={content.schemaFaq} />
+      <JsonLd id={`schema-article-${content.id}`} data={content.schemaArticle ?? schemas.article} />
+      <JsonLd id={`schema-recipe-${content.id}`} data={schemas.recipe} />
+      <JsonLd id={`schema-howto-${content.id}`} data={schemas.howto} />
+      <JsonLd id={`schema-faq-${content.id}`} data={schemas.faq} />
       <JsonLd id={`schema-breadcrumb-${content.id}`} data={breadcrumb} />
 
       <div className="rp-layout">
