@@ -1964,8 +1964,8 @@ canvas,img,picture,svg,video {
     gap: var(--wwr-space-3);
     min-width: 0;
     background: var(--wwr-surface);
-    border: 1px solid var(--wwr-border);
-    border-radius: var(--wwr-radius-sm);
+    border: 1px solid var(--border, rgba(26,35,64,.1));
+    border-radius: 8px;
     color: var(--wwr-ink);
     text-decoration: none;
     overflow: hidden;
@@ -2113,13 +2113,6 @@ canvas,img,picture,svg,video {
 
     .rp-logo {
         text-align: left
-    }
-}
-
-@media (max-width: 1100px) {
-    .rp-layout {
-        grid-template-columns:minmax(0,680px) 300px;
-        gap: var(--wwr-space-7)
     }
 }
 
@@ -2747,9 +2740,9 @@ canvas,img,picture,svg,video {
 
 .rp-step {
     display: grid;
-    grid-template-columns: 88px 1fr;
-    gap: var(--wwr-space-5);
-    padding: var(--wwr-space-5) 0;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 20px;
+    padding: 24px 0;
     border-bottom: 1px solid var(--wwr-border-subtle)
 }
 
@@ -2790,7 +2783,8 @@ canvas,img,picture,svg,video {
     line-height: var(--wwr-leading-relaxed);
     color: var(--wwr-ink);
     margin: 0 0 var(--wwr-space-3);
-    max-width: 60ch
+    max-width: 60ch;
+    hyphens: none
 }
 
 .rp-step-actions {
@@ -2827,10 +2821,17 @@ canvas,img,picture,svg,video {
     border-color: var(--wwr-amber)
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
     .rp-step {
-        grid-template-columns:1fr;
-        gap: var(--wwr-space-2)
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 12px
+    }
+
+    .rp-step-body p,
+    .rp-step-body h3 {
+        overflow-wrap: break-word;
+        word-break: break-word;
+        max-width: 100%
     }
 
     .rp-step-num {
@@ -7274,13 +7275,16 @@ img {
     }
 }
 
+/* ===== rp-layout canonical — desktop two-column, mobile single-column ===== */
 .rp-layout {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 680px) 300px;
     gap: 48px;
-    max-width: 1200px;
-    padding: 40px 28px 80px;
-    align-items: start
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 0 80px;
+    align-items: start;
+    justify-content: center
 }
 
 .rp-main {
@@ -7289,7 +7293,8 @@ img {
 
 .rp-sidebar {
     position: sticky;
-    top: 72px
+    top: 72px;
+    height: fit-content
 }
 
 .rp-sidebar-sticky {
@@ -7614,8 +7619,9 @@ img {
 
 @media (max-width: 900px) {
     .rp-layout {
-        grid-template-columns:1fr;
-        gap: 32px
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+        padding: 24px 0 60px
     }
 
     .rp-sidebar {
@@ -8010,13 +8016,6 @@ img {
     padding-right: clamp(20px,4vw,48px)
 }
 
-.rp-layout {
-    grid-template-columns: minmax(0,680px) 320px;
-    gap: var(--wwr-space-8);
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: var(--wwr-space-7) 0 var(--wwr-space-9)
-}
 
 .content-detail,.rp-main {
     margin-left: auto;
@@ -8067,13 +8066,6 @@ img {
     border-radius: 2px
 }
 
-@media (max-width: 900px) {
-    .rp-layout {
-        grid-template-columns:1fr;
-        gap: var(--wwr-space-7)
-    }
-}
-
 @media (max-width: 560px) {
     .rp-shell {
         padding-left:16px;
@@ -8099,7 +8091,9 @@ img {
 
 .wwr-content-card {
     position: relative;
-    border: 1px solid hsla(0,0%,100%,.08);
+    border: 1px solid var(--border, rgba(26,35,64,.1));
+    border-radius: 8px;
+    overflow: hidden;
     background: #241a0c;
     margin-bottom: 16px;
     transition: transform .2s,border-color .2s;
@@ -8515,13 +8509,6 @@ img {
         line-height: 1.55
     }
 
-    .rp-layout {
-        width: 100%;
-        max-width: 100%;
-        padding-top: 24px;
-        gap: 24px
-    }
-
     .content-detail,.rp-main {
         max-width: 100%;
         min-width: 0
@@ -8906,7 +8893,9 @@ body,html {
 
 .wwr-content-card {
     background: #fff;
-    border-color: rgba(26,35,64,.1);
+    border: 1px solid var(--border, rgba(26,35,64,.1));
+    border-radius: 8px;
+    overflow: hidden;
     display: flex;
     flex-direction: column
 }
@@ -8996,21 +8985,10 @@ body,html {
     padding-right: 24px
 }
 
-.rp-layout {
-    grid-template-columns: minmax(0,680px);
-    width: 100%;
-    max-width: 100%;
-    justify-content: center
-}
-
 .content-detail,.rp-main {
     width: 100%;
     max-width: 100%;
     min-width: 0
-}
-
-.rp-sidebar {
-    display: none
 }
 
 .body-inline-image figcaption,.rp-breadcrumb,.rp-breadcrumb a,.rp-hero-caption,.rp-hero-caption a,.rp-meta-row,.wwr-ai-disclosure {
@@ -9183,12 +9161,8 @@ body,html {
         background: #f5f0e8
     }
 
-    .content-detail,.rp-layout,.rp-main {
+    .content-detail,.rp-main {
         max-width: 100%
-    }
-
-    .rp-layout {
-        padding-top: 24px
     }
 
     .rp-title {
@@ -9274,7 +9248,7 @@ img {
 .body-section,.chef-note,.chef-secrets-box,.content-detail :where(p,li,h1,h2,h3,h4,blockquote,figcaption),.quick-answer-box,.wwr-text-block {
     overflow-wrap: break-word;
     word-break: break-word;
-    hyphens: auto
+    hyphens: none
 }
 
 .da-nav-close {
@@ -9329,7 +9303,7 @@ body.da-mobile-menu-open {
     font-size: 19px;
     line-height: 1.35;
     -webkit-line-clamp: 2;
-    hyphens: auto;
+    hyphens: none;
     min-width: 0;
     max-width: 100%
 }
@@ -9391,23 +9365,6 @@ body.da-mobile-menu-open {
     justify-content: center
 }
 
-.wwr-article-layout {
-    display: grid;
-    grid-template-columns: minmax(0,1fr);
-    gap: 32px;
-    width: 100%;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding-left: 16px;
-    padding-right: 16px
-}
-
-.wwr-article-body {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow: hidden
-}
 
 .wwr-article-hero {
     width: 100%;
@@ -9430,7 +9387,7 @@ body.da-mobile-menu-open {
 .wwr-step-content h3,.wwr-step-content p {
     overflow-wrap: break-word;
     word-break: break-word;
-    hyphens: auto
+    hyphens: none
 }
 
 .wwr-ingredient-item {
@@ -9479,20 +9436,6 @@ body.da-mobile-menu-open {
         padding-right: 48px
     }
 
-    .wwr-article-layout {
-        grid-template-columns: minmax(0,680px) 320px;
-        align-items: start;
-        padding-left: 48px;
-        padding-right: 48px
-    }
-
-    .wwr-article-sidebar {
-        display: block;
-        position: sticky;
-        top: 80px;
-        height: -moz-fit-content;
-        height: fit-content
-    }
 }
 
 @media (max-width: 767px) {
@@ -9647,11 +9590,6 @@ body.da-mobile-menu-open {
 
     .body-card,.chef-note,.chef-secrets-box,.ingredient-list li,.numbered-steps li,.quick-answer-box,.wwr-card-body,.wwr-step {
         padding: 16px
-    }
-
-    .wwr-article-layout {
-        padding-left: 16px;
-        padding-right: 16px
     }
 
     .rp-meta-row {
