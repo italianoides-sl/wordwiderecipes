@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import type { Content } from '@/lib/db/schema';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
+  'https://worldwiderecipes.app',
+  'https://www.worldwiderecipes.app',
+);
 const DEFAULT_IMAGE = '/logo.png';
 
 export function buildMetadata(content: Content): Metadata {

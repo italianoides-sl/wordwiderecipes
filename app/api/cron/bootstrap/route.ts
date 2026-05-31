@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { generateJSON } from '@/lib/ai/openai';
+import { CONTENT_PLAN, getContentPlanCategory, type ContentPlanCategory } from '@/lib/content/content-plan';
 import { runContentPipeline } from '@/lib/content/pipeline';
-import { db, generationJobs, type ContentType, type Locale } from '@/lib/db/schema';
+import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
 
 type BootstrapTopic = {
   topic: string;
@@ -30,18 +31,51 @@ function authorized(request: NextRequest) {
   return Boolean(secret && (authorization === `Bearer ${secret}` || headerSecret === secret));
 }
 
-async function getBootstrapTopics(offset: number, limit: number): Promise<BootstrapTopic[]> {
+async function getExistingTitles() {
+  const existing = await db
+    .select({ title: content.title, slug: content.slug })
+    .from(content)
+    .where(eq(content.status, 'published'));
+
+  return existing.map((row) => row.title.toLowerCase());
+}
+
+async function countPublishedInCategory(category: ContentPlanCategory) {
+  const [row] = await db
+    .select({ count: sql`count(*)` })
+    .from(content)
+    .where(
+      and(
+        eq(content.status, 'published'),
+        eq(content.type, category.type),
+        sql`(${content.category} = ${category.category} OR ${content.originalData}->>'content_category' = ${category.category})`,
+      ),
+    );
+
+  return Number(row?.count ?? 0);
+}
+
+async function getBootstrapTopics(category: ContentPlanCategory, limit: number): Promise<BootstrapTopic[]> {
+  const existingTitles = await getExistingTitles();
   const topicsResponse = await generateJSON<BootstrapTopicAI[] | BootstrapTopicResponse>(`
 Create ${limit} specific Spanish-language culinary content topics for a bootstrap batch.
-Start at catalog offset ${offset}.
-Mix content types across recipe, technique, ingredient, guide, spice, and cuisine.
+
+Category: ${category.category}
+Content type: ${category.type}
+Category focus:
+${category.prompt_focus}
+
+DO NOT generate any of these already published topics:
+${existingTitles.slice(0, 100).join(', ') || 'No published topics yet.'}
+
+Generate something completely different.
 Use locales es-mx and es, with a slight preference for es-mx.
 Avoid generic titles. Each topic must have clear search intent and natural affiliate potential.
 
 Return a JSON object with this exact structure:
 {
   "topics": [
-    {"topic":"specific topic","content_type":"recipe|technique|ingredient|guide|spice|cuisine","locale":"es-mx|es"}
+    {"topic":"specific topic","content_type":"${category.type}","locale":"es-mx"}
   ]
 }
 The topics array must contain exactly ${limit} items.
@@ -52,28 +86,36 @@ The topics array must contain exactly ${limit} items.
     : (topicsResponse.topics ?? topicsResponse.trends ?? topicsResponse.items ?? []);
 
   if (!Array.isArray(topics) || topics.length === 0) {
-    throw new Error('No bootstrap topics returned from AI');
+    throw new Error(`No bootstrap topics returned for ${category.category}`);
   }
 
-  return topics.map((topic) => ({
+  return topics.slice(0, limit).map((topic) => ({
     topic: topic.topic,
-    contentType: topic.content_type ?? topic.contentType ?? 'recipe',
+    contentType: topic.content_type ?? topic.contentType ?? category.type,
     locale: topic.locale,
   }));
 }
 
-export async function POST(request: NextRequest) {
-  if (!authorized(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+async function runBootstrapBatch(category: ContentPlanCategory) {
+  const totalBefore = await countPublishedInCategory(category);
+  const remainingBefore = Math.max(category.quota - totalBefore, 0);
+  const batchSize = Math.min(10, remainingBefore);
 
-  const completedJobs = await db
-    .select({ id: generationJobs.id })
-    .from(generationJobs)
-    .where(eq(generationJobs.jobType, 'bootstrap'));
+  if (batchSize === 0) {
+    return {
+      category: category.category,
+      generated: 0,
+      total_in_category: totalBefore,
+      quota: category.quota,
+      remaining: 0,
+      next_batch: null,
+      jobs: [],
+    };
+  }
 
-  const offset = completedJobs.length;
-  const batch = await getBootstrapTopics(offset, 50);
+  const batch = await getBootstrapTopics(category, batchSize);
   const jobs = [];
-  let batchComplete = 0;
+  let generated = 0;
 
   for (const item of batch) {
     const result = await runContentPipeline({
@@ -82,18 +124,57 @@ export async function POST(request: NextRequest) {
       locale: item.locale,
       jobType: 'bootstrap',
       promptVersion: process.env.CONTENT_PROMPT_VERSION ?? 'v1.0',
+      contentCategory: category.category,
+      promptFocus: category.prompt_focus,
     });
 
     jobs.push({ topic: item.topic, ...result });
-    if (result.success) batchComplete += 1;
+    if (result.success) generated += 1;
   }
 
-  const total = offset + batchComplete;
-  return Response.json({
-    batch_complete: batchComplete,
-    total,
-    remaining: Math.max(1000 - total, 0),
+  const total = await countPublishedInCategory(category);
+  const remaining = Math.max(category.quota - total, 0);
+
+  return {
+    category: category.category,
+    generated,
+    total_in_category: total,
+    quota: category.quota,
+    remaining,
+    next_batch: remaining > 0 ? `/api/cron/bootstrap?category=${category.category}` : null,
     jobs,
+  };
+}
+
+export async function POST(request: NextRequest) {
+  if (!authorized(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const requestedCategory = request.nextUrl.searchParams.get('category');
+  const category = getContentPlanCategory(requestedCategory);
+
+  if (requestedCategory && !category) {
+    return Response.json(
+      {
+        error: 'Unknown category',
+        categories: CONTENT_PLAN.map((item) => item.category),
+      },
+      { status: 400 },
+    );
+  }
+
+  if (category) {
+    return Response.json(await runBootstrapBatch(category));
+  }
+
+  const results = [];
+  for (const item of CONTENT_PLAN) {
+    results.push(await runBootstrapBatch(item));
+  }
+
+  return Response.json({
+    generated: results.reduce((total, item) => total + item.generated, 0),
+    remaining: results.reduce((total, item) => total + item.remaining, 0),
+    categories: results,
   });
 }
 

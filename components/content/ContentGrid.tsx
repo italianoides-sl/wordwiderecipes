@@ -28,19 +28,21 @@ export default function ContentGrid({ rows }: { rows: Content[] }) {
       {rows.map((item, index) => (
         <Fragment key={item.id}>
           <a className="directory-card wwr-content-card" href={contentHref(item)}>
-            {item.imageUrl ? (
-              <img className="wwr-card-image" src={item.imageUrl} alt={item.imageAlt ?? item.title} />
-            ) : (
-              <div className="directory-card-fallback wwr-card-image wwr-card-placeholder" aria-hidden="true">
-                <span className="wwr-card-placeholder-icon">{typeIcon(item.type)}</span>
-                <span className="wwr-card-placeholder-label">{item.cuisine?.toUpperCase() ?? 'WORLDWIDERECIPES'}</span>
-              </div>
-            )}
+            <div className="wwr-card-image-wrap">
+              {item.imageUrl ? (
+                <img className="wwr-card-image" src={item.imageUrl} alt={item.imageAlt ?? item.title} />
+              ) : (
+                <div className="directory-card-fallback wwr-card-image wwr-card-placeholder" aria-hidden="true">
+                  <span className="wwr-card-placeholder-icon">{typeIcon(item.type)}</span>
+                  <span className="wwr-card-placeholder-label">{item.cuisine?.toUpperCase() ?? 'WORLDWIDERECIPES'}</span>
+                </div>
+              )}
+            </div>
             <div className="wwr-card-body">
               <span className="directory-card-type">{item.type}</span>
               <h2 className="wwr-card-title">{item.title}</h2>
-              <p>{item.metaDescription ?? item.quickAnswer}</p>
-              <span className="directory-card-meta">
+              <p className="wwr-card-excerpt">{item.metaDescription ?? item.quickAnswer}</p>
+              <span className="directory-card-meta wwr-card-meta">
                 {[item.cuisine, item.difficulty, item.totalTimeMins ? `${item.totalTimeMins} min` : null].filter(Boolean).join(' · ')}
               </span>
             </div>

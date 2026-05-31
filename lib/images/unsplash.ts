@@ -143,18 +143,25 @@ export async function fetchArticleImages(options: {
   console.log(`Image search query for "${options.title}": ${heroQuery}`);
 
   const titleKeywordList = meaningfulWords(options.title ?? '').slice(0, 5);
+  const titleKeywords = titleKeywordList.slice(0, 3).join(' ') || options.contentType;
+  const cuisine = options.cuisine ?? 'world';
 
   const querySlots = [
     heroQuery,
     `${heroQuery} food photography`,
-    `${options.cuisine ?? 'world'} cuisine food photography`,
-    titleKeywordList.slice(0, 3).join(' ') || options.contentType,
+    `${cuisine} cuisine food photography`,
+    titleKeywords,
+    `${titleKeywords} plated dish`,
+    `${cuisine} ingredients cooking`,
+    `${options.contentType} food close up`,
+    'global cuisine food photography',
   ];
 
   const roles: ContentImage['role'][] = ['hero', 'body', 'ingredient', 'result'];
 
-  for (let i = 0; i < count; i++) {
-    const query = querySlots[i] ?? querySlots[querySlots.length - 1];
+  for (let slotIndex = 0; slotIndex < querySlots.length && images.length < count; slotIndex++) {
+    const query = querySlots[slotIndex];
+    const imageIndex = images.length;
 
     try {
       const result = await unsplash.search.getPhotos({
@@ -170,7 +177,7 @@ export async function fetchArticleImages(options: {
       let chosen: (typeof candidates)[0] | undefined;
 
       for (const candidate of candidates.slice(0, 5)) {
-        const relevant = i === 0
+        const relevant = imageIndex === 0
           ? await isPhotoRelevant(candidate as UnsplashPhotoForScoring, options.title ?? '')
           : true;
         if (relevant) {
@@ -200,12 +207,12 @@ export async function fetchArticleImages(options: {
         attribution: `Photo by ${chosen.user.name} on Unsplash`,
         photographerName: chosen.user.name,
         photographerUrl: `${chosen.user.links.html}?utm_source=worldwiderecipes&utm_medium=referral`,
-        role: roles[i] ?? 'body',
+        role: roles[imageIndex] ?? 'body',
       });
 
       await sleep(300);
     } catch (err) {
-      console.error(`Image fetch failed for slot ${i}:`, err);
+      console.error(`Image fetch failed for query "${query}":`, err);
     }
   }
 

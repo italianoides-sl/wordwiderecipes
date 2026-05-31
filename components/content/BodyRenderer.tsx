@@ -53,6 +53,17 @@ function bodyImage(content: Content, index: number) {
   return images[index];
 }
 
+function BodyImageSlot({ content, index }: { content: Content; index: number }) {
+  const image = bodyImage(content, index);
+  if (!text(image?.url)) return null;
+
+  return (
+    <div className="body-inline-image-item">
+      <InlineContentImage image={image} title={content.title} />
+    </div>
+  );
+}
+
 function InlineContentImage({ image, title }: { image?: Record<string, unknown>; title: string }) {
   const url = text(image?.url);
   if (!url) return null;
@@ -134,8 +145,13 @@ function RecipeBody({ content }: { content: Content }) {
             {ingredients.map((ingredient, index) => {
               const link = affiliateFor(ingredient.name, links);
               return (
-                <li key={`${text(ingredient.name)}-${index}`}>
-                  <strong>{[ingredient.amount, ingredient.unit, ingredient.name].map(text).filter(Boolean).join(' ')}</strong>
+                <li className="wwr-ingredient-item" key={`${text(ingredient.name)}-${index}`}>
+                  <strong className="wwr-ingredient-name">{[ingredient.name].map(text).filter(Boolean).join(' ')}</strong>
+                  {[ingredient.amount, ingredient.unit].map(text).filter(Boolean).length ? (
+                    <span className="wwr-ingredient-amount">
+                      {[ingredient.amount, ingredient.unit].map(text).filter(Boolean).join(' ')}
+                    </span>
+                  ) : null}
                   {ingredient.note ? <span>{text(ingredient.note)}</span> : null}
                   {ingredient.substitute ? <small>Sustituto: {text(ingredient.substitute)}</small> : null}
                   <AffiliateMiniLink link={link} />
@@ -145,6 +161,7 @@ function RecipeBody({ content }: { content: Content }) {
           </ul>
         </section>
       ) : null}
+      <BodyImageSlot content={content} index={1} />
       <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
       {steps.length ? (
         <section className="body-section recipe-steps-section">
@@ -163,7 +180,6 @@ function RecipeBody({ content }: { content: Content }) {
                 </div>
                 {index === 3 ? (
                   <Fragment key={`ad-step-${index}`}>
-                    <div className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></div>
                     <div className="body-ad-item"><AdUnit slot="0987654321" format="auto" /></div>
                   </Fragment>
                 ) : null}
@@ -172,6 +188,7 @@ function RecipeBody({ content }: { content: Content }) {
           </div>
         </section>
       ) : null}
+      <BodyImageSlot content={content} index={2} />
       {variations.length ? <GenericField name="variations" value={variations} /> : null}
       {body.pairing ? <GenericField name="pairing" value={body.pairing} /> : null}
       {body.chef_note ? (
@@ -211,6 +228,7 @@ function TechniqueBody({ content }: { content: Content }) {
       ) : null}
       <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
       {body.before_you_start ? <section className="quick-answer-box"><h2>Antes de empezar</h2><p>{text(body.before_you_start)}</p></section> : null}
+      <BodyImageSlot content={content} index={1} />
       {steps.length ? (
         <section className="body-section">
           <h2>Pasos</h2>
@@ -225,7 +243,7 @@ function TechniqueBody({ content }: { content: Content }) {
                     {step.common_mistake ? <p className="wwr-step-tip">Error comun: {text(step.common_mistake)}</p> : null}
                   </div>
                 </div>
-                {index === 3 ? <div className="body-inline-image-item"><InlineContentImage image={bodyImage(content, 1)} title={content.title} /></div> : null}
+                {index === 3 ? <div className="body-ad-item"><AdUnit slot="0987654321" format="auto" /></div> : null}
               </Fragment>
             ))}
           </div>
@@ -239,6 +257,7 @@ function TechniqueBody({ content }: { content: Content }) {
           </tbody></table>
         </section>
       ) : null}
+      <BodyImageSlot content={content} index={2} />
       {body.practice_exercise ? <GenericField name="practice_exercise" value={body.practice_exercise} /> : null}
       {body.advanced_applications ? <GenericField name="advanced_applications" value={body.advanced_applications} /> : null}
     </div>
@@ -268,7 +287,16 @@ function IngredientBody({ content }: { content: Content }) {
           return (
             <Fragment key={key}>
               <GenericField name={key} value={body[key]} />
+              <BodyImageSlot content={content} index={1} />
               <AdUnit slot="1234567890" format="rectangle" style={{ margin: '24px 0' }} />
+            </Fragment>
+          );
+        }
+        if (key === 'classic_uses') {
+          return (
+            <Fragment key={key}>
+              <GenericField name={key} value={body[key]} />
+              <BodyImageSlot content={content} index={2} />
             </Fragment>
           );
         }
@@ -280,11 +308,17 @@ function IngredientBody({ content }: { content: Content }) {
 
 function GenericBody({ content }: { content: Content }) {
   const body = content.body ?? {};
+  const entries = Object.entries(body).filter(([key, value]) => key !== 'images' && Boolean(value));
+
   return (
     <div className="body-renderer">
-      {Object.entries(body)
-        .filter(([key, value]) => key !== 'images' && Boolean(value))
-        .map(([key, value]) => <GenericField key={key} name={key} value={value} />)}
+      {entries.map(([key, value], index) => (
+        <Fragment key={key}>
+          <GenericField name={key} value={value} />
+          {index === 0 ? <BodyImageSlot content={content} index={1} /> : null}
+          {index === 2 ? <BodyImageSlot content={content} index={2} /> : null}
+        </Fragment>
+      ))}
     </div>
   );
 }

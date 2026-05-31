@@ -1,5 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
 import { generateJSON } from '@/lib/ai/openai';
+import { getContentPlanCategory } from '@/lib/content/content-plan';
 import { runContentPipeline } from '@/lib/content/pipeline';
 import { content, db, trendingTopics } from '@/lib/db/schema';
 import type { ContentType, Locale } from '@/lib/db/schema';
@@ -7,6 +8,16 @@ import type { ContentType, Locale } from '@/lib/db/schema';
 type Trend = {
   topic: string;
   content_type: ContentType;
+  content_category?:
+    | 'recetas'
+    | 'tecnicas'
+    | 'marinadas'
+    | 'salsas'
+    | 'historia'
+    | 'ingredientes'
+    | 'especias'
+    | 'guias'
+    | 'herramientas';
   locale_primary: Locale;
   why_trending: string;
   unique_angle: string;
@@ -21,12 +32,6 @@ type TrendResponse = {
   items?: Trend[];
 };
 
-const AFFILIATE_SCORE: Record<Trend['affiliate_potential'], number> = {
-  high: 3,
-  medium: 2,
-  low: 1,
-};
-
 function normalizeSlug(value: string) {
   return value
     .toLowerCase()
@@ -34,6 +39,13 @@ function normalizeSlug(value: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function inferContentCategory(trend: Trend) {
+  if (trend.content_category) return trend.content_category;
+  if (trend.content_type === 'technique') return 'tecnicas';
+  if (trend.content_type === 'guide') return 'historia';
+  return 'recetas';
 }
 
 export async function GET(req: Request) {
@@ -52,57 +64,6 @@ export async function GET(req: Request) {
       .orderBy(desc(trendingTopics.detectedAt))
       .limit(100);
 
-    const recentTopicsList = recentTopics
-      .map((row) => row.topic)
-      .filter(Boolean)
-      .join(', ');
-
-    const trendsResponse = await generateJSON<Trend[] | TrendResponse>(`
-You are a culinary trend analyst for Spain and Latin America.
-Today: ${new Date().toISOString().split('T')[0]}
-Primary market: Mexico. Secondary: Spain.
-
-Find 12 high-potential food content topics for today.
-Prioritize: trending on TikTok MX/ES, seasonal ingredients,
-underrepresented topics in Spanish food content, high affiliate potential.
-
-Rules:
-- Max 4 recipes, min 2 techniques, min 1 ingredient, min 1 guide
-- Mix locales: 60% es-mx, 40% es
-- No generic topics. Only specific, interesting angles.
-- Must have affiliate potential (links to Amazon products naturally)
-
-IMPORTANT - DO NOT suggest these topics, they are already published:
-${recentTopicsList || 'No previous topics yet.'}
-
-Generate topics that are completely different from the above list.
-
-Return a JSON object with this exact structure:
-{
-  "trends": [
-    {
-      "topic": "specific descriptive name",
-      "content_type": "recipe|technique|ingredient|guide|spice|cuisine",
-      "locale_primary": "es-mx|es",
-      "why_trending": "brief reason",
-      "unique_angle": "what makes our version different",
-      "affiliate_potential": "high|medium|low",
-      "tiktok_hashtags": ["#tag"],
-      "difficulty_to_rank": "low|medium|high"
-    }
-  ]
-}
-The trends array must contain exactly 12 items.
-    `, 3, { maxTokens: 8192 });
-
-    const trends = Array.isArray(trendsResponse)
-      ? trendsResponse
-      : (trendsResponse.trends ?? trendsResponse.topics ?? trendsResponse.items ?? []);
-
-    if (!Array.isArray(trends) || trends.length === 0) {
-      throw new Error('No trends returned from AI');
-    }
-
     const existingContent = await db
       .select({
         slug: content.slug,
@@ -113,6 +74,60 @@ The trends array must contain exactly 12 items.
       .where(eq(content.status, 'published'))
       .orderBy(desc(content.publishedAt))
       .limit(200);
+
+    const recentTopicsList = recentTopics
+      .map((row) => row.topic)
+      .concat(existingContent.map((row) => row.title))
+      .filter(Boolean)
+      .slice(0, 100)
+      .join(', ');
+
+    const trendsResponse = await generateJSON<Trend[] | TrendResponse>(`
+You are a culinary trend analyst for Spain and Latin America.
+Today: ${new Date().toISOString().split('T')[0]}
+Primary market: Mexico. Secondary: Spain.
+
+Generate 10 food content topics following this distribution:
+5 recipes (diverse world cuisines, no repetition),
+2 techniques (professional cooking methods),
+1 marinade (any protein, any cuisine),
+1 sauce or vinaigrette (unique, not common),
+1 history or culture article about food.
+
+Check these already published topics and avoid them:
+${recentTopicsList || 'No previous topics yet.'}
+
+Focus on: authenticity, cultural depth, unique angles.
+Trending topics in MX and ES preferred.
+Mix locales: 60% es-mx, 40% es.
+No generic topics. Only specific, interesting angles.
+
+Return a JSON object with this exact structure:
+{
+  "trends": [
+    {
+      "topic": "specific descriptive name",
+      "content_type": "recipe|technique|guide",
+      "content_category": "recetas|tecnicas|marinadas|salsas|historia",
+      "locale_primary": "es-mx|es",
+      "why_trending": "brief reason",
+      "unique_angle": "what makes our version different",
+      "affiliate_potential": "high|medium|low",
+      "tiktok_hashtags": ["#tag"],
+      "difficulty_to_rank": "low|medium|high"
+    }
+  ]
+}
+The trends array must contain exactly 10 items.
+    `, 3, { maxTokens: 8192 });
+
+    const trends = Array.isArray(trendsResponse)
+      ? trendsResponse
+      : (trendsResponse.trends ?? trendsResponse.topics ?? trendsResponse.items ?? []);
+
+    if (!Array.isArray(trends) || trends.length === 0) {
+      throw new Error('No trends returned from AI');
+    }
 
     const existingTopicsRows = await db
       .select({
@@ -186,16 +201,49 @@ The trends array must contain exactly 12 items.
         .onConflictDoNothing();
     }
 
-    const toGenerate = filtered
-      .sort((a, b) => AFFILIATE_SCORE[b.affiliate_potential] - AFFILIATE_SCORE[a.affiliate_potential])
-      .slice(0, 10);
+    // Select up to 10 trends following the distribution:
+    // 4 recipes, 1 technique, 1 marinade or sauce, 1 ingredient or spice,
+    // 1 kitchen guide/tool, 1 history, 1 free choice
+    const selected = new Set<number>();
+    const toGenerate: Trend[] = [];
+
+    function pick(predicate: (t: Trend) => boolean, limit: number) {
+      for (let i = 0; i < filtered.length && toGenerate.length < 10 && limit > 0; i++) {
+        if (selected.has(i)) continue;
+        const t = filtered[i];
+        if (predicate(t)) {
+          selected.add(i);
+          toGenerate.push(t);
+          limit -= 1;
+        }
+      }
+    }
+
+    // 4 recipes
+    pick((t) => t.content_type === 'recipe' || t.content_category === 'recetas', 4);
+    // 1 technique
+    pick((t) => t.content_type === 'technique' || t.content_category === 'tecnicas', 1);
+    // 1 marinade or sauce
+    pick((t) => t.content_category === 'marinadas' || t.content_category === 'salsas', 1);
+    // 1 ingredient or spice
+    pick((t) => t.content_type === 'ingredient' || t.content_type === 'spice' || t.content_category === 'ingredientes' || t.content_category === 'especias', 1);
+    // 1 kitchen guide or tool
+    pick((t) => t.content_type === 'guide' || t.content_category === 'guias' || t.content_category === 'herramientas', 1);
+    // 1 history
+    pick((t) => t.content_category === 'historia', 1);
+    // Free choice: fill remaining up to 10
+    pick(() => true, 10 - toGenerate.length);
 
     for (const trend of toGenerate) {
+      const contentCategory = inferContentCategory(trend);
+      const planCategory = getContentPlanCategory(contentCategory);
       const result = await runContentPipeline({
         topic: trend.topic,
         contentType: trend.content_type,
         locale: trend.locale_primary,
         jobType: 'daily_cron',
+        contentCategory,
+        promptFocus: planCategory?.prompt_focus,
       });
 
       if (result.success) {

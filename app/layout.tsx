@@ -5,7 +5,10 @@ import Footer from '@/components/layout/Footer';
 import CookieConsent from '@/components/ui/CookieConsent';
 import './globals.css';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
+  'https://worldwiderecipes.app',
+  'https://www.worldwiderecipes.app',
+);
 const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
 const siteStructuredData = {
   '@context': 'https://schema.org',
@@ -55,7 +58,7 @@ export const metadata: Metadata = {
     title: 'World Wide Recipes',
     description: 'World gastronomy, recipes, techniques and ingredients in Spanish and English.',
     type: 'website',
-    url: 'https://worldwiderecipes.app',
+    url: baseUrl,
     images: ['/logo.png'],
   },
   manifest: '/site.webmanifest',

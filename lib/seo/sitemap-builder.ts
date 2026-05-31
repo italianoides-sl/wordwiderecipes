@@ -1,7 +1,10 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
+  'https://worldwiderecipes.app',
+  'https://www.worldwiderecipes.app',
+);
 
 export const SITEMAP_FILES = [
   'sitemap-recipes-es.xml',

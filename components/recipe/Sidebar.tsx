@@ -107,12 +107,12 @@ function Newsletter() {
   );
 }
 
-export default function Sidebar({ content }: { content: Content }) {
+export default function Sidebar({ content, className = '' }: { content: Content; className?: string }) {
   const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
   const topAffiliate = content.affiliateLinks?.[0];
 
   return (
-    <aside className="rp-sidebar">
+    <aside className={`rp-sidebar ${className}`.trim()}>
       <div className="rp-sidebar-sticky">
         <JumpNav />
 

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const links = [
   { label: 'Inicio', href: '/' },
@@ -17,6 +17,11 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
 
+  useEffect(() => {
+    document.body.classList.toggle('da-mobile-menu-open', mobileOpen);
+    return () => document.body.classList.remove('da-mobile-menu-open');
+  }, [mobileOpen]);
+
   function isActive(href: string) {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
@@ -30,7 +35,15 @@ export default function Header() {
           <span>WorldWideRecipes</span>
         </Link>
 
-        <nav className={`da-nav-links${mobileOpen ? ' is-open' : ''}`} aria-label="Principal">
+        <nav id="main-mobile-menu" className={`da-nav-links${mobileOpen ? ' is-open' : ''}`} aria-label="Principal">
+          <button
+            className="da-nav-close"
+            aria-label="Cerrar menu"
+            type="button"
+            onClick={() => setMobileOpen(false)}
+          >
+            ×
+          </button>
           {links.map((l) => (
             <Link
               key={l.href}
@@ -62,6 +75,8 @@ export default function Header() {
         <button
           className={`da-burger${mobileOpen ? ' is-open' : ''}`}
           aria-label="Menú"
+          aria-expanded={mobileOpen}
+          aria-controls="main-mobile-menu"
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
         >

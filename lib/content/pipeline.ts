@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/schema';
 import { fetchArticleImages, type ContentImage } from '@/lib/images/unsplash';
 import { generateText } from '@/lib/ai/openai';
+import { indexUrlIndexNow } from '@/lib/seo/bing-indexing';
 import { indexUrl } from '@/lib/seo/google-indexing';
 import { updateHomepageConfig } from '@/lib/homepage/config';
 import { buildSchemas } from './schemas';
@@ -25,6 +26,8 @@ type PipelineConfig = {
   locale: Locale | string;
   jobType: 'bootstrap' | 'daily_cron' | 'manual';
   promptVersion?: string;
+  contentCategory?: string;
+  promptFocus?: string;
 };
 
 function getBaseUrl() {
@@ -198,7 +201,14 @@ function sanitizeContent(draft: ContentDraft): ContentDraft {
 }
 
 function assertValidSteps(draft: ContentDraft) {
-  const steps = Array.isArray(draft.body?.steps) ? draft.body.steps : [];
+  const stepsKey = Array.isArray(draft.body?.steps)
+    ? 'steps'
+    : Array.isArray(draft.body?.step_by_step_plan)
+      ? 'step_by_step_plan'
+      : Array.isArray(draft.body?.how_to_start)
+        ? 'how_to_start'
+        : 'steps';
+  const steps = Array.isArray(draft.body?.[stepsKey]) ? draft.body[stepsKey] : [];
   const validSteps = steps
     .map((step) => {
       if (!step || typeof step !== 'object') return false;
@@ -211,7 +221,7 @@ function assertValidSteps(draft: ContentDraft) {
     .filter((step): step is Record<string, unknown> & { text: string } => {
       return Boolean(step) && typeof step === 'object' && step.text.length >= 40;
     });
-  draft.body.steps = validSteps;
+  draft.body[stepsKey] = validSteps;
 
   if (validSteps.length < 4) {
     throw new Error(`Only ${validSteps.length} valid steps — regenerating`);
@@ -240,6 +250,8 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
           topic: config.topic,
           contentType: config.contentType,
           locale: config.locale,
+          contentCategory: config.contentCategory,
+          promptFocus: config.promptFocus,
           improvements: quality?.improvements ?? [],
           criticalFixes: quality?.hard_fails ?? [],
         });
@@ -325,15 +337,27 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       readingTimeMins: Math.ceil(wordCount / 200),
     };
 
-    const slugExists = await db
-      .select({ id: content.id })
-      .from(content)
-      .where(eq(content.slug, enrichedDraft.slug))
-      .limit(1);
+    // Ensure slug uniqueness by appending a small numeric suffix (slug-2, slug-3, ...)
+    let finalSlug = enrichedDraft.slug;
+    let counter = 2;
+    // Check and increment until we find a free slug
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const slugExists = await db
+        .select({ id: content.id })
+        .from(content)
+        .where(eq(content.slug, finalSlug))
+        .limit(1);
+
+      if (!slugExists || slugExists.length === 0) break;
+
+      finalSlug = `${enrichedDraft.slug}-${counter}`;
+      counter += 1;
+    }
 
     const finalDraft: ContentDraft = {
       ...enrichedDraft,
-      slug: slugExists.length > 0 ? `${enrichedDraft.slug}-${config.locale}-${Date.now()}` : enrichedDraft.slug,
+      slug: finalSlug,
     };
 
     const difficultyMap: Record<string, string> = {
@@ -430,7 +454,11 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
 
     let indexed = false;
     try {
-      indexed = await indexUrl(url);
+      const [googleIndexed, indexNowIndexed] = await Promise.all([
+        indexUrl(url),
+        indexUrlIndexNow(url),
+      ]);
+      indexed = googleIndexed || indexNowIndexed;
       if (indexed) {
         await db.update(content).set({ indexedAt: new Date() }).where(eq(content.id, contentId));
       }

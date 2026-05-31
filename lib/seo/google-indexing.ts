@@ -1,59 +1,61 @@
 import { google } from 'googleapis';
-import { getGoogleServiceAccountCredentials } from '@/lib/google/service-account';
 
 const INDEXING_ENDPOINT = 'https://indexing.googleapis.com/v3/urlNotifications:publish';
-const INDEXING_SCOPE = 'https://www.googleapis.com/auth/indexing';
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function indexUrl(url: string): Promise<boolean> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key) {
+    console.log('Google service account not configured');
+    return false;
+  }
+
   try {
-    const credentials = getGoogleServiceAccountCredentials();
-    if (!credentials) {
-      console.log('Google Indexing API not configured - skipping');
-      return false;
+    const credentials = JSON.parse(key);
+
+    const auth = new google.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ['https://www.googleapis.com/auth/indexing'],
+    });
+
+    const token = await auth.getAccessToken();
+    const accessToken = typeof token === 'string' ? token : (token && (token as any).token) || '';
+
+    const response = await fetch(INDEXING_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ url, type: 'URL_UPDATED' }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (response.ok) {
+      console.log(`✅ Google indexed: ${url}`);
+      return true;
     }
 
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: [INDEXING_SCOPE],
-    });
-
-    const client = await auth.getClient();
-
-    const response = await client.request({
-      url: INDEXING_ENDPOINT,
-      method: 'POST',
-      data: {
-        url,
-        type: 'URL_UPDATED',
-      },
-    });
-
-    console.log(`Indexed: ${url}`, response.data);
-    return true;
-  } catch (error: any) {
-    // Do not crash the publishing pipeline if indexing fails.
-    console.error('INDEXING ERROR:', error);
-    console.error(error.response?.data);
-    console.error(`Indexing failed for ${url}:`, error.message);
+    console.error(`Google indexing failed:`, result);
+    return false;
+  } catch (err) {
+    console.error(`Google indexing error:`, err);
     return false;
   }
 }
 
-export async function indexBatch(urls: string[]): Promise<{
-  success: number;
-  failed: number;
-}> {
-  // Temporary safety limit while validating indexing behavior.
+export async function indexBatch(urls: string[]): Promise<{ success: number; failed: number }> {
   const urlsToIndex = urls.slice(0, 5);
   let success = 0;
   let failed = 0;
 
-  for (const url of urlsToIndex) {
-    const ok = await indexUrl(url);
+  for (const u of urlsToIndex) {
+    const ok = await indexUrl(u);
     if (ok) success += 1;
     else failed += 1;
     await sleep(500);

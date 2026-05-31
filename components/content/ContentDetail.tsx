@@ -76,8 +76,8 @@ export default function ContentDetail({ content, related }: { content: Content; 
       <JsonLd id={`schema-faq-${content.id}`} data={schemas.faq} />
       <JsonLd id={`schema-breadcrumb-${content.id}`} data={breadcrumb} />
 
-      <div className="rp-layout">
-        <article className="rp-main content-detail">
+      <div className="rp-layout wwr-article-layout">
+        <article className="rp-main content-detail wwr-article-body">
           <nav className="rp-breadcrumb" aria-label="Migas de pan">
             <ol>
               <li><a href="/">Inicio</a><span className="rp-bc-sep">›</span></li>
@@ -94,12 +94,12 @@ export default function ContentDetail({ content, related }: { content: Content; 
 
           {content.imageUrl ? (
             <figure className="rp-hero">
-              <div className="rp-hero-frame">
+              <div className="rp-hero-frame wwr-article-hero">
                 <img src={content.imageUrl} alt={content.imageAlt ?? content.title} />
               </div>
               {imageAttribution(content)}
             </figure>
-          ) : <div className="image-skeleton rp-hero-frame" />}
+          ) : <div className="image-skeleton rp-hero-frame wwr-article-hero" />}
 
           <header className="rp-title-block">
             <div className="rp-badges">
@@ -194,7 +194,7 @@ export default function ContentDetail({ content, related }: { content: Content; 
           <TikTokCTA hashtags={content.tiktokHashtags ?? []} />
         </article>
 
-        <Sidebar content={content} />
+        <Sidebar content={content} className="wwr-article-sidebar" />
       </div>
     </main>
   );

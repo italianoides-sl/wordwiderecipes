@@ -5,6 +5,8 @@ type GenerateContentInput = {
   topic: string;
   contentType: string;
   locale: string;
+  contentCategory?: string;
+  promptFocus?: string;
   improvements?: string[];
   criticalFixes?: string[];
 };
@@ -88,6 +90,95 @@ Return ONLY valid JSON (snake_case keys):
 {"title":"","slug":"","meta_title":"max 55 chars","meta_description":"max 155 chars","quick_answer":"50 word direct answer","definition":${contentType === 'recipe' ? 'null' : '""'},"citation_summary":"100 words for AI citation","entity_mentions":[],"cuisine":"","category":"","difficulty":"easy|medium|hard","total_time_mins":0,"diet_tags":[],"tiktok_hashtags":[],"body":{},"faq":[{"question":"","answer":""}],"key_facts":[{"label":"","value":""}]}`;
 }
 
+function categoryContext(contentCategory?: string, promptFocus?: string) {
+  const focus = promptFocus ? `\nCategory focus: ${promptFocus}\n` : '';
+
+  if (contentCategory === 'marinadas') {
+    return `${focus}
+MARINADAS prompt context:
+You are a professional chef specializing in marinades.
+Create a complete, unique marinade recipe with:
+- Specific protein or vegetable it's designed for
+- Cultural origin and story
+- Exact ratios and ingredients
+- Minimum marinating time and maximum time
+- What happens chemically during marinating
+- 3 variations (more spicy, more acidic, more sweet)
+- What to do with leftover marinade
+This must be THE definitive guide for this specific marinade.
+Set category exactly to "marinadas".
+`;
+  }
+
+  if (contentCategory === 'historia') {
+    return `${focus}
+HISTORIA prompt context:
+You are a food historian and culinary anthropologist.
+Write a deep, fascinating article about food history.
+Include: dates, real historical figures, trade routes,
+cultural exchanges, surprising facts most people don't know.
+This should read like a chapter from a great food history book,
+not a Wikipedia summary.
+Minimum 1200 words. Make it genuinely interesting.
+Set category exactly to "historia".
+`;
+  }
+
+  if (contentCategory === 'tecnicas') {
+    return `${focus}
+TECNICAS prompt context:
+You are a culinary school instructor writing for
+ambitious home cooks who want to cook like professionals.
+Be precise, technical but accessible.
+Include: the science behind the technique,
+common mistakes and exactly why they happen,
+how to practice and master it at home,
+which dishes unlock once you master this technique.
+Set category exactly to "tecnicas".
+`;
+  }
+
+  if (contentCategory === 'salsas') {
+    return `${focus}
+SALSAS prompt context:
+You are a sauce expert and chef.
+Create the definitive guide to this specific sauce or dressing.
+Include: origin, classic uses, exact recipe with ratios,
+emulsification technique if applicable,
+how to fix it if it breaks,
+10 dishes it pairs with,
+how to store and for how long,
+3 creative variations.
+Set category exactly to "salsas".
+`;
+  }
+
+  if (contentCategory === 'herramientas') {
+    return `${focus}
+HERRAMIENTAS prompt context:
+You are a kitchen equipment expert writing clear, practical guides for home cooks.
+Cover: what the tool does, why you need it, how to choose for different budgets,
+how to use it correctly, maintenance and care, sharpening/seasoning where relevant,
+recommended brands at different price points, and safety tips.
+Include: real examples of recipes or tasks it unlocks, affiliate_hint when natural,
+and decision criteria to help readers choose.
+Minimum 800 words. Set category exactly to "herramientas".
+`;
+  }
+
+  if (contentCategory === 'recetas') {
+    return `${focus}
+RECETAS prompt context:
+Create a complete recipe from a specific world cuisine.
+Avoid repeating famous dishes unless the angle is genuinely distinct.
+Use exact culinary details, cultural context, chef-level technique,
+and practical home-cook execution.
+Set category exactly to "recetas".
+`;
+  }
+
+  return focus;
+}
 function recipePrompt(topic: string, locale: string, uniqueAngle: string) {
   return `${MANDATORY_STEPS_RULE}Chef writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
@@ -177,16 +268,17 @@ body:{"intro":"","cultural_context":"","flavor_pillars":[{"pillar":"","examples"
 ${base('cuisine')}`;
 }
 
-function promptFor(input: Required<Pick<GenerateContentInput, 'topic' | 'contentType' | 'locale'>>) {
+function promptFor(input: Required<Pick<GenerateContentInput, 'topic' | 'contentType' | 'locale'>> & Pick<GenerateContentInput, 'contentCategory' | 'promptFocus'>) {
   const uniqueAngle = deriveUniqueAngle(input.topic, input.contentType, input.locale);
+  const context = categoryContext(input.contentCategory, input.promptFocus);
   switch (input.contentType) {
-    case 'recipe':    return recipePrompt(input.topic, input.locale, uniqueAngle);
-    case 'technique': return techniquePrompt(input.topic, input.locale, uniqueAngle);
-    case 'ingredient':return ingredientPrompt(input.topic, input.locale, uniqueAngle);
-    case 'spice':     return spicePrompt(input.topic, input.locale, uniqueAngle);
-    case 'cuisine':   return cuisinePrompt(input.topic, input.locale, uniqueAngle);
+    case 'recipe':    return `${context}${recipePrompt(input.topic, input.locale, uniqueAngle)}`;
+    case 'technique': return `${context}${techniquePrompt(input.topic, input.locale, uniqueAngle)}`;
+    case 'ingredient':return `${context}${ingredientPrompt(input.topic, input.locale, uniqueAngle)}`;
+    case 'spice':     return `${context}${spicePrompt(input.topic, input.locale, uniqueAngle)}`;
+    case 'cuisine':   return `${context}${cuisinePrompt(input.topic, input.locale, uniqueAngle)}`;
     case 'guide':
-    default:          return guidePrompt(input.topic, input.locale, uniqueAngle);
+    default:          return `${context}${guidePrompt(input.topic, input.locale, uniqueAngle)}`;
   }
 }
 
@@ -194,7 +286,13 @@ export async function generateContent(input: GenerateContentInput): Promise<Cont
   const contentType = CONTENT_TYPES.has(input.contentType) ? input.contentType : 'guide';
   const locale = LOCALES.has(input.locale) ? input.locale : 'es';
 
-  const prompt = `${CRITICAL_PREFIX}${retryPrefix(input.improvements ?? [], input.criticalFixes ?? [])}${promptFor({ topic: input.topic, contentType, locale })}`;
+  const prompt = `${CRITICAL_PREFIX}${retryPrefix(input.improvements ?? [], input.criticalFixes ?? [])}${promptFor({
+    topic: input.topic,
+    contentType,
+    locale,
+    contentCategory: input.contentCategory,
+    promptFocus: input.promptFocus,
+  })}`;
 
   const raw = await generateJSON<RawDraft>(prompt);
   const body = (raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : {}) as Record<string, unknown>;
@@ -218,7 +316,7 @@ export async function generateContent(input: GenerateContentInput): Promise<Cont
     citationSummary: stringField(raw, 'citation_summary', 'citationSummary'),
     body: { ...body, personal_opinion: personalOpinion },
     cuisine: stringField(raw, 'cuisine'),
-    category: stringField(raw, 'category'),
+    category: input.contentCategory ?? stringField(raw, 'category'),
     dietTags: arrayField(raw, 'diet_tags', 'dietTags') ?? [],
     difficulty: (() => {
       const difficultyMap: Record<string, string> = {
@@ -235,7 +333,13 @@ export async function generateContent(input: GenerateContentInput): Promise<Cont
     authorEntity: 'WorldWideRecipes Editorial Team',
     expertReviewed: false,
     primarySources: arrayField(raw, 'primary_sources', 'primarySources') ?? [],
-    originalData: { generated_for: input.topic, content_type: contentType, locale },
+    originalData: {
+      generated_for: input.topic,
+      content_type: contentType,
+      content_category: input.contentCategory,
+      prompt_focus: input.promptFocus,
+      locale,
+    },
     generationPromptVersion: process.env.CONTENT_PROMPT_VERSION ?? 'v1.0',
   };
 }
