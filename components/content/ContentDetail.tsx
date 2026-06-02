@@ -7,7 +7,6 @@ import { buildSchemas } from '@/lib/content/schemas';
 import type { Content, ContentType } from '@/lib/db/schema';
 
 const Sidebar = dynamic(() => import('@/components/recipe/Sidebar'), { ssr: false, loading: () => null });
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
 function text(value: unknown): string {
   if (!value) return '';
@@ -58,15 +57,6 @@ export default function ContentDetail({ content, related }: { content: Content; 
   const typeHref = `/recipes/tipo/${typeFilter}`;
   const cuisineHref = countrySlug ? `/recipes/pais/${countrySlug}` : null;
   const schemas = buildSchemas(content);
-  const breadcrumb = content.schemaBreadcrumb ?? schemas.breadcrumb ?? {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE_URL },
-      { '@type': 'ListItem', position: 2, name: content.type, item: `${BASE_URL}${typeHref}` },
-      { '@type': 'ListItem', position: 3, name: content.cuisine ?? content.title, item: `${BASE_URL}${contentHref(content)}` },
-    ],
-  };
 
   return (
     <main className="rp-shell">
@@ -74,7 +64,7 @@ export default function ContentDetail({ content, related }: { content: Content; 
       <JsonLd id={`schema-recipe-${content.id}`} data={schemas.recipe} />
       <JsonLd id={`schema-howto-${content.id}`} data={schemas.howto} />
       <JsonLd id={`schema-faq-${content.id}`} data={schemas.faq} />
-      <JsonLd id={`schema-breadcrumb-${content.id}`} data={breadcrumb} />
+      <JsonLd id={`schema-breadcrumb-${content.id}`} data={schemas.breadcrumb} />
 
       <div className="rp-layout wwr-article-layout">
         <article className="rp-main content-detail wwr-article-body">

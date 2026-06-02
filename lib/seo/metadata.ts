@@ -13,9 +13,18 @@ export function buildMetadata(content: Content): Metadata {
   const url = content.canonicalUrl ?? `${BASE_URL}/${content.type}/${content.slug}`;
   const image = content.ogImageUrl ?? content.imageUrl ?? DEFAULT_IMAGE;
 
+  const bodyData = (content.body ?? {}) as Record<string, unknown>;
+  const bodyKeywords = Array.isArray(bodyData.keywords)
+    ? (bodyData.keywords as unknown[]).map(String).filter(Boolean)
+    : [];
+  const keywords = bodyKeywords.length
+    ? bodyKeywords.join(', ')
+    : [...(content.dietTags ?? []), content.category, content.cuisine].filter(Boolean).join(', ') || content.title;
+
   return {
     title,
     description,
+    keywords,
     robots: {
       index: content.status === 'published',
       follow: true,

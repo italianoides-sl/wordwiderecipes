@@ -7,13 +7,19 @@ export type FAQPageSchema = Record<string, unknown>;
 export type BreadcrumbSchema = Record<string, unknown>;
 export type OrganizationSchema = Record<string, unknown>;
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app').replace(/\/+$/, '');
 const LOGO_URL = `${BASE_URL}/logo.png`;
+const TIKTOK_URL = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+function safeUrl(url: string): string {
+  return url.replace(/([^:])\/\/+/g, '$1/');
+}
 
 function stripUndefined<T>(value: T): T {
   if (Array.isArray(value)) return value.map(stripUndefined).filter((item) => item !== undefined && item !== null) as T;
   if (!value || typeof value !== 'object') return value;
-
   return Object.fromEntries(
     Object.entries(value)
       .filter(([, entry]) => entry !== undefined && entry !== null)
@@ -21,7 +27,7 @@ function stripUndefined<T>(value: T): T {
   ) as T;
 }
 
-function body(content: Content) {
+function body(content: Content): Record<string, unknown> {
   return (content.body ?? {}) as Record<string, unknown>;
 }
 
@@ -29,54 +35,14 @@ function arrayField<T = unknown>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
-// Builds the image field for Recipe/HowTo/Article schemas.
-// Returns an array of absolute URLs gathered from all available sources,
-// or a single string if only one image exists, or undefined if none found.
-function buildImageField(content: Content): string | string[] | undefined {
-  const seen = new Set<string>();
-  const images: string[] = [];
-
-  const add = (url: unknown) => {
-    if (typeof url === 'string' && url.startsWith('http') && !seen.has(url)) {
-      seen.add(url);
-      images.push(url);
-    }
-  };
-
-  // Priority 1: dedicated imageUrl column
-  add(content.imageUrl);
-
-  // Priority 2: all images stored in body.images (Unsplash images fetched during pipeline)
-  for (const img of arrayField<Record<string, unknown>>(body(content).images)) {
-    add(img.url);
+function textFromObject(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const r = value as Record<string, unknown>;
+    return String(r.text ?? r.name ?? r.label ?? r.item ?? r.ingredient ?? '');
   }
-
-  // Priority 3: OG image (may be same as imageUrl, deduped via Set)
-  add(content.ogImageUrl);
-
-  if (images.length === 0) return undefined;
-  if (images.length === 1) return images[0];
-  return images;
-}
-
-// Builds the keywords field for Recipe schema.
-// Combines dietTags + category + cuisine; falls back to words from the title
-// so the field is never missing or empty.
-function buildKeywordsField(content: Content): string | undefined {
-  const parts: string[] = [];
-
-  if (content.dietTags?.length) parts.push(...content.dietTags);
-  if (content.category) parts.push(content.category);
-  if (content.cuisine) parts.push(content.cuisine);
-
-  const unique = [...new Set(parts.filter(Boolean))];
-  if (unique.length > 0) return unique.join(', ');
-
-  // Fallback: meaningful words extracted from the title
-  const titleWords = (content.title ?? '')
-    .split(/[\s,\-–]+/)
-    .filter((w) => w.length > 3);
-  return titleWords.join(', ') || undefined;
+  return String(value);
 }
 
 function textList(value: unknown): string[] {
@@ -85,148 +51,200 @@ function textList(value: unknown): string[] {
     .filter(Boolean);
 }
 
-function textFromObject(value: unknown): string {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-    return String(record.text ?? record.name ?? record.label ?? record.item ?? record.ingredient ?? '');
-  }
-  return String(value);
-}
-
 function numberField(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) return Number(value);
   return undefined;
 }
 
-function minutesToDuration(minutes?: number | null) {
+function minutesToDuration(minutes?: number | null): string | undefined {
   if (!minutes || minutes <= 0) return undefined;
   return `PT${minutes}M`;
 }
 
-function contentUrl(content: Content) {
-  if (content.canonicalUrl) return content.canonicalUrl;
-  return `${BASE_URL}/${content.type}/${content.slug}`;
-}
-
-function publisher() {
-  return {
-    '@type': 'Organization',
-    name: 'WorldWideRecipes',
-    url: BASE_URL,
-    logo: {
-      '@type': 'ImageObject',
-      url: LOGO_URL,
-    },
-  };
-}
-
-function author(content: Content) {
-  return {
-    '@type': content.authorEntity?.includes('Team') ? 'Organization' : 'Person',
-    name: content.authorEntity ?? 'WorldWideRecipes Editorial Team',
-  };
-}
-
-function recipeAuthor() {
-  return {
-    '@type': 'Organization',
-    name: 'WorldWideRecipes',
-    url: BASE_URL,
-  };
+function stepName(step: unknown): string | undefined {
+  if (!step || typeof step !== 'object') return undefined;
+  return textFromObject((step as Record<string, unknown>).title ?? (step as Record<string, unknown>).name).trim() || undefined;
 }
 
 function recipeIngredient(value: unknown): string {
   if (!value) return '';
   if (typeof value === 'string') return value;
   if (typeof value !== 'object') return String(value);
-
-  const ingredient = value as Record<string, unknown>;
-  const amount = textFromObject(ingredient.amount).trim();
-  const unit = textFromObject(ingredient.unit).trim();
-  const name = textFromObject(ingredient.name).trim();
-  const text = [amount, unit, name].filter(Boolean).join(' ');
-
-  return text || textFromObject(value);
+  const ing = value as Record<string, unknown>;
+  return [textFromObject(ing.amount), textFromObject(ing.unit), textFromObject(ing.name)]
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(' ') || textFromObject(value);
 }
 
-function stepName(step: unknown): string | undefined {
-  if (!step || typeof step !== 'object') return undefined;
-  const record = step as Record<string, unknown>;
-  return textFromObject(record.title ?? record.name).trim() || undefined;
-}
-
-function aggregateRating(value: unknown) {
+function aggregateRating(value: unknown): Record<string, unknown> | undefined {
   if (!value || typeof value !== 'object') return undefined;
-  const rating = value as Record<string, unknown>;
-  const ratingValue = numberField(rating.ratingValue ?? rating.rating_value ?? rating.value);
-  const ratingCount = numberField(rating.ratingCount ?? rating.rating_count ?? rating.count);
+  const r = value as Record<string, unknown>;
+  const ratingValue = numberField(r.ratingValue ?? r.rating_value ?? r.value);
+  const ratingCount = numberField(r.ratingCount ?? r.rating_count ?? r.count);
   if (!ratingValue || !ratingCount) return undefined;
+  return { '@type': 'AggregateRating', ratingValue, ratingCount };
+}
 
+// ─── URL helpers ─────────────────────────────────────────────────────────────
+
+function contentUrl(content: Content): string {
+  return safeUrl(content.canonicalUrl ?? `${BASE_URL}/${content.type}/${content.slug}`);
+}
+
+// ─── Shared field builders ────────────────────────────────────────────────────
+
+function buildAuthor(): Record<string, unknown> {
   return {
-    '@type': 'AggregateRating',
-    ratingValue,
-    ratingCount,
+    '@type': 'Organization',
+    name: 'WorldWideRecipes',
+    url: BASE_URL,
+    logo: LOGO_URL,
+    sameAs: [TIKTOK_URL],
   };
 }
 
+function buildPublisher(): Record<string, unknown> {
+  return {
+    '@type': 'Organization',
+    name: 'WorldWideRecipes',
+    url: BASE_URL,
+    logo: { '@type': 'ImageObject', url: LOGO_URL },
+  };
+}
+
+// Collects all available image URLs from the content record (deduped, absolute only).
+function buildImageField(content: Content): string | string[] | undefined {
+  const seen = new Set<string>();
+  const images: string[] = [];
+  const add = (url: unknown) => {
+    if (typeof url === 'string' && url.startsWith('http') && !seen.has(url)) {
+      seen.add(url);
+      images.push(url);
+    }
+  };
+  add(content.imageUrl);
+  for (const img of arrayField<Record<string, unknown>>(body(content).images)) add(img.url);
+  add(content.ogImageUrl);
+  if (images.length === 0) return undefined;
+  return images.length === 1 ? images[0] : images;
+}
+
+// Returns the images array (always an array, possibly empty) for step-level image rotation.
+function imagesArray(content: Content): string[] {
+  const field = buildImageField(content);
+  if (!field) return [];
+  return Array.isArray(field) ? field : [field];
+}
+
+// Keywords: body.tags → dietTags + category + cuisine → title words (never empty if title exists).
+function buildKeywordsField(content: Content): string | undefined {
+  const bodyTags = arrayField<unknown>(body(content).tags)
+    .map(textFromObject)
+    .filter(Boolean);
+  if (bodyTags.length) return bodyTags.join(', ');
+
+  const parts: string[] = [];
+  if (content.dietTags?.length) parts.push(...content.dietTags);
+  if (content.category) parts.push(content.category);
+  if (content.cuisine) parts.push(content.cuisine);
+  const unique = [...new Set(parts.filter(Boolean))];
+  if (unique.length) return unique.join(', ');
+
+  return (content.title ?? '').split(/[\s,\-–]+/).filter((w) => w.length > 3).join(', ') || undefined;
+}
+
+// Fields shared across ALL schema types.
+function baseFields(content: Content): Record<string, unknown> {
+  return {
+    name: content.title,
+    description: content.metaDescription ?? content.quickAnswer,
+    image: buildImageField(content),
+    author: buildAuthor(),
+    publisher: buildPublisher(),
+    datePublished: content.publishedAt?.toISOString(),
+    dateModified: (content.updatedAt ?? content.publishedAt)?.toISOString(),
+    inLanguage: content.locale ?? 'es',
+    url: contentUrl(content),
+  };
+}
+
+// ─── Schema builders ──────────────────────────────────────────────────────────
+
 export function buildRecipeSchema(content: Content): RecipeSchema {
   const data = body(content);
+  const imgs = imagesArray(content);
+
   const ingredients = arrayField(data.ingredients).map(recipeIngredient).filter(Boolean);
-  const steps = arrayField(data.steps).map((step, index) => ({
+  const steps = arrayField(data.steps).map((step, i) => ({
     '@type': 'HowToStep',
-    position: index + 1,
+    position: i + 1,
     name: stepName(step),
     text: textFromObject(step),
+    ...(imgs.length ? { image: imgs[i % imgs.length] } : {}),
   }));
+
+  // AggregateRating: use body data first; fall back to editorial qualityScore (1-10 scale).
+  const rating =
+    aggregateRating(data.aggregateRating ?? data.aggregate_rating ?? data.rating) ??
+    (() => {
+      const score = typeof content.qualityScore === 'string' ? parseFloat(content.qualityScore) : null;
+      if (!score || score <= 0) return undefined;
+      return {
+        '@type': 'AggregateRating',
+        ratingValue: score.toFixed(1),
+        ratingCount: '1',
+        bestRating: '10',
+        worstRating: '1',
+      };
+    })();
+
+  const nutrition = data.nutrition
+    ? { '@type': 'NutritionInformation', ...(data.nutrition as Record<string, unknown>) }
+    : { '@type': 'NutritionInformation', servingSize: '1 porción' };
 
   return stripUndefined({
     '@context': 'https://schema.org',
     '@type': 'Recipe',
-    name: content.title,
-    description: content.metaDescription ?? content.quickAnswer,
-    image: buildImageField(content),
-    author: recipeAuthor(),
-    datePublished: content.publishedAt?.toISOString(),
-    dateModified: content.updatedAt?.toISOString(),
+    ...baseFields(content),
+    keywords: buildKeywordsField(content),
+    recipeCategory: content.category,
+    recipeCuisine: content.cuisine ?? 'Internacional',
     prepTime: minutesToDuration(numberField(data.prepTimeMins ?? data.prep_time_mins)) ?? 'PT20M',
     cookTime: minutesToDuration(numberField(data.cookTimeMins ?? data.cook_time_mins)),
     totalTime: minutesToDuration(content.totalTimeMins),
     recipeYield: data.recipeYield ?? data.recipe_yield ?? data.servings ?? '4 porciones',
-    recipeCategory: content.category,
-    recipeCuisine: content.cuisine,
     recipeIngredient: ingredients,
     recipeInstructions: steps,
-    keywords: buildKeywordsField(content),
-    nutrition: data.nutrition
-      ? {
-          '@type': 'NutritionInformation',
-          ...(data.nutrition as Record<string, unknown>),
-        }
-      : undefined,
-    aggregateRating: aggregateRating(data.aggregateRating ?? data.aggregate_rating ?? data.rating),
+    nutrition,
+    aggregateRating: rating,
     mainEntityOfPage: contentUrl(content),
   });
 }
 
 export function buildHowToSchema(content: Content): HowToSchema {
   const data = body(content);
-  const steps = arrayField(data.steps ?? content.stepsSummary).map((step, index) => ({
-    '@type': 'HowToStep',
-    position: index + 1,
-    name: stepName(step),
-    text: textFromObject(step),
-  }));
+  const imgs = imagesArray(content);
+
+  const steps = arrayField(data.steps ?? content.stepsSummary).map((step, i) => {
+    const imgUrl = imgs.length ? imgs[i % imgs.length] : undefined;
+    return {
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: stepName(step),
+      text: textFromObject(step),
+      ...(imgUrl ? { image: { '@type': 'ImageObject', url: imgUrl } } : {}),
+    };
+  });
 
   return stripUndefined({
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: content.title,
-    description: content.metaDescription ?? content.quickAnswer,
-    image: buildImageField(content),
-    totalTime: minutesToDuration(content.totalTimeMins),
+    ...baseFields(content),
+    keywords: buildKeywordsField(content),
+    totalTime: minutesToDuration(content.totalTimeMins) ?? 'PT30M',
+    estimatedCost: { '@type': 'MonetaryAmount', currency: 'EUR', value: '0' },
     supply: textList(data.supply ?? data.ingredients).map((name) => ({ '@type': 'HowToSupply', name })),
     tool: textList(data.tool ?? data.tools ?? data.equipment).map((name) => ({ '@type': 'HowToTool', name })),
     step: steps,
@@ -234,24 +252,28 @@ export function buildHowToSchema(content: Content): HowToSchema {
   });
 }
 
+const ARTICLE_SECTION: Record<string, string> = {
+  guide: 'Guías de cocina',
+  ingredient: 'Ingredientes',
+  spice: 'Especias',
+  cuisine: 'Gastronomía',
+  news: 'Noticias de cocina',
+};
+
 export function buildArticleSchema(content: Content): ArticleSchema {
+  const data = body(content);
+  const articleBody = typeof data.intro === 'string' ? data.intro : (content.quickAnswer ?? undefined);
+
   return stripUndefined({
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': content.type === 'news' ? 'NewsArticle' : 'Article',
+    ...baseFields(content),
     headline: content.metaTitle ?? content.title,
-    image: buildImageField(content),
-    author: {
-      '@type': 'Person',
-      name: content.authorEntity ?? 'WorldWideRecipes Editorial Team',
-    },
-    publisher: publisher(),
-    datePublished: content.publishedAt?.toISOString(),
-    dateModified: content.updatedAt?.toISOString(),
-    description: content.metaDescription ?? content.quickAnswer,
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': contentUrl(content),
-    },
+    articleBody,
+    articleSection: ARTICLE_SECTION[content.type] ?? 'Gastronomía',
+    keywords: buildKeywordsField(content),
+    wordCount: content.wordCount ?? undefined,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': contentUrl(content) },
   });
 }
 
@@ -262,46 +284,21 @@ export function buildFAQSchema(content: Content): FAQPageSchema {
     mainEntity: (content.faq ?? []).map((item) => ({
       '@type': 'Question',
       name: item.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.answer,
-      },
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
     })),
   };
 }
 
 export function buildBreadcrumbSchema(content: Content): BreadcrumbSchema {
-  const localeUrl = `${BASE_URL}/${content.locale}`;
   const typeLabel = `${content.type.charAt(0).toUpperCase()}${content.type.slice(1)}`;
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'WorldWideRecipes',
-        item: BASE_URL,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: content.locale,
-        item: localeUrl,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: typeLabel,
-        item: `${localeUrl}/${content.type}`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 4,
-        name: content.title,
-        item: contentUrl(content),
-      },
+      { '@type': 'ListItem', position: 1, name: 'WorldWideRecipes', item: BASE_URL },
+      { '@type': 'ListItem', position: 2, name: typeLabel, item: safeUrl(`${BASE_URL}/recipes`) },
+      { '@type': 'ListItem', position: 3, name: content.title, item: contentUrl(content) },
     ],
   };
 }
@@ -313,7 +310,7 @@ export function buildOrganizationSchema(): OrganizationSchema {
     name: 'WorldWideRecipes',
     url: BASE_URL,
     logo: LOGO_URL,
-    sameAs: [process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef'],
+    sameAs: [TIKTOK_URL],
     knowsAbout: [
       'Gastronomía internacional',
       'Recetas',
@@ -328,8 +325,11 @@ export function buildOrganizationSchema(): OrganizationSchema {
 
 export function buildSchemas(content: Content) {
   return {
+    // Recipe → Schema.org/Recipe
     recipe: content.type === 'recipe' ? buildRecipeSchema(content) : null,
-    howto: content.type === 'technique' || content.type === 'guide' ? buildHowToSchema(content) : null,
+    // Technique → Schema.org/HowTo  |  guide now maps to Article (not HowTo)
+    howto: content.type === 'technique' ? buildHowToSchema(content) : null,
+    // All types get an Article/NewsArticle schema as fallback for Google Discover
     article: buildArticleSchema(content),
     faq: buildFAQSchema(content),
     breadcrumb: buildBreadcrumbSchema(content),

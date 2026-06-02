@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "add-keywords": "tsx scripts/add-keywords.ts",
+    "add-internal-links": "tsx scripts/add-internal-links.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.39.0",
     "google-auth-library": "^10.6.2",

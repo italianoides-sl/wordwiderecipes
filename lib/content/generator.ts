@@ -1,4 +1,5 @@
 import { generateJSON } from '@/lib/ai/openai';
+import { generateKeywords } from './keywords';
 import type { ContentDraft, ContentType, Locale } from './types';
 
 type GenerateContentInput = {
@@ -314,7 +315,11 @@ export async function generateContent(input: GenerateContentInput): Promise<Cont
     keyFacts: arrayField(raw, 'key_facts', 'keyFacts'),
     entityMentions: arrayField(raw, 'entity_mentions', 'entityMentions') ?? [],
     citationSummary: stringField(raw, 'citation_summary', 'citationSummary'),
-    body: { ...body, personal_opinion: personalOpinion },
+    body: {
+      ...body,
+      personal_opinion: personalOpinion,
+      keywords: await generateKeywords(title, contentType, stringField(raw, 'cuisine')).catch(() => []),
+    },
     cuisine: stringField(raw, 'cuisine'),
     category: input.contentCategory ?? stringField(raw, 'category'),
     dietTags: arrayField(raw, 'diet_tags', 'dietTags') ?? [],
