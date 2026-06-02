@@ -57,7 +57,7 @@ export async function GET() {
     '',
     'Canonical site: https://worldwiderecipes.app',
     'Contact: contact@worldwiderecipes.app',
-    'Editorial approach: AI-assisted drafting with Google Gemini, quality validation, human editorial standards, chef perspective, Unsplash photo attribution.',
+    'Editorial approach: AI-assisted drafting with OpenAI, quality validation, human editorial standards, chef perspective, Unsplash photo attribution.',
     '',
     '## Primary URLs',
     `- Homepage: ${BASE_URL}/`,

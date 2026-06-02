@@ -59,7 +59,7 @@ export const content = pgTable(
     faq: jsonb('faq').$type<Array<{ question: string; answer: string }>>(),
     qualityScore: numeric('quality_score', { precision: 3, scale: 1 }),
     qualityDetails: jsonb('quality_details').$type<Record<string, unknown>>(),
-    aiModel: text('ai_model').default('gemini-2.5-flash'),
+    aiModel: text('ai_model').default('gpt-4o-mini'),
     generationPromptVersion: text('generation_prompt_version'),
     humanReviewed: boolean('human_reviewed').default(false),
     humanReviewedAt: timestamp('human_reviewed_at', { withTimezone: true }),

@@ -33,11 +33,11 @@ jobs:
       - name: Generate content
         env:
           DATABASE_URL:          ${{ secrets.DATABASE_URL }}
-          GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL:          ${{ secrets.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          OPENAI_API_KEY:        ${{ secrets.OPENAI_API_KEY }}
           UNSPLASH_ACCESS_KEY:   ${{ secrets.UNSPLASH_ACCESS_KEY }}
           NEXT_PUBLIC_BASE_URL:  https://worldwiderecipes.app
           # Optional overrides
+          AI_MODEL:              ${{ secrets.AI_MODEL }}
           CONTENT_PROMPT_VERSION: ${{ secrets.CONTENT_PROMPT_VERSION }}
           CRON_SECRET:           ${{ secrets.CRON_SECRET }}
           REVALIDATE_SECRET:     ${{ secrets.REVALIDATE_SECRET }}

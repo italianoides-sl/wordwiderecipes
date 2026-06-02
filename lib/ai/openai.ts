@@ -1,42 +1,48 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
+function getClient() {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error('Missing OPENAI_API_KEY');
+  }
+
+  return new OpenAI({ apiKey });
+}
 
 type GenerateJSONOptions = {
   maxTokens?: number;
   temperature?: number;
 };
 
-function getModel(options: GenerateJSONOptions = {}) {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error('Missing GEMINI_API_KEY');
-  }
-
-  return genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-    generationConfig: {
-      temperature: options.temperature,
-      maxOutputTokens: options.maxTokens,
-    },
-  });
-}
-
 export async function generateJSON<T>(prompt: string, retries = 2, options: GenerateJSONOptions = {}): Promise<T> {
   const maxTokens = options.maxTokens ?? 8192;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const model = getModel({ ...options, maxTokens });
-      const result = await model.generateContent(
-        `${prompt}\n\nRespond ONLY with valid JSON, no markdown, no backticks.`,
-      );
-      const text = result.response.text().trim();
-      const clean = text.replace(/```json|```/g, '').trim();
+      const response = await getClient().chat.completions.create({
+        model: process.env.AI_MODEL ?? 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature: options.temperature ?? 0.75,
+        max_tokens: maxTokens,
+        seed: 42,
+      });
 
-      return JSON.parse(clean) as T;
+      console.log('finish_reason:', response.choices[0].finish_reason);
+      console.log('tokens used:', response.usage);
+
+      const finishReason = response.choices[0].finish_reason;
+      if (finishReason === 'length') {
+        throw new Error('Response cut off — retrying');
+      }
+
+      const text = (response.choices[0].message.content ?? '{}')
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+
+      return JSON.parse(text) as T;
     } catch (err: unknown) {
-      console.error('Gemini generateJSON error:', err);
       if (attempt < retries) {
         await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 3000));
         continue;
@@ -48,12 +54,11 @@ export async function generateJSON<T>(prompt: string, retries = 2, options: Gene
 }
 
 export async function generateText(prompt: string, maxTokens = 100): Promise<string> {
-  try {
-    const model = getModel({ maxTokens, temperature: 0.7 });
-    const result = await model.generateContent(prompt);
-    return result.response.text().trim();
-  } catch (err) {
-    console.error('Gemini generateText error:', err);
-    throw err;
-  }
+  const response = await getClient().chat.completions.create({
+    model: process.env.AI_MODEL ?? 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    max_tokens: maxTokens,
+  });
+  return response.choices[0].message.content ?? '';
 }

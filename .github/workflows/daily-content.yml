@@ -27,8 +27,8 @@ jobs:
         run: npx tsx scripts/generate-content.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-2.5-flash
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_MODEL: gpt-4o-mini
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           NEXT_PUBLIC_BASE_URL: https://worldwiderecipes.app
 
