@@ -1,4 +1,5 @@
 import type { Content } from '@/lib/db/schema';
+import { safeISOString } from '@/lib/utils/date';
 
 export type RecipeSchema = Record<string, unknown>;
 export type HowToSchema = Record<string, unknown>;
@@ -163,8 +164,8 @@ function baseFields(content: Content): Record<string, unknown> {
     image: buildImageField(content),
     author: buildAuthor(),
     publisher: buildPublisher(),
-    datePublished: content.publishedAt?.toISOString(),
-    dateModified: (content.updatedAt ?? content.publishedAt)?.toISOString(),
+    datePublished: safeISOString(content.publishedAt),
+    dateModified: safeISOString(content.updatedAt ?? content.publishedAt),
     inLanguage: content.locale ?? 'es',
     url: contentUrl(content),
   };
@@ -196,12 +197,8 @@ export function buildRecipeSchema(content: Content): RecipeSchema {
       '@type': 'Organization',
       name: 'WorldWideRecipes',
     },
-    datePublished: content.publishedAt instanceof Date
-      ? content.publishedAt.toISOString()
-      : (typeof content.publishedAt === 'string' ? content.publishedAt : undefined),
-    dateModified: content.updatedAt instanceof Date
-      ? content.updatedAt.toISOString()
-      : (content.publishedAt instanceof Date ? content.publishedAt.toISOString() : undefined),
+    datePublished: safeISOString(content.publishedAt),
+    dateModified: safeISOString(content.updatedAt ?? content.publishedAt),
     recipeIngredient: ingredients
       .map((ing: any) => `${ing?.amount ?? ''} ${ing?.unit ?? ''} ${ing?.name ?? ''}`.trim())
       .filter(Boolean),

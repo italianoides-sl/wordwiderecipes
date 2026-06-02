@@ -1,6 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
+import { safeISOString } from '@/lib/utils/date';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
@@ -61,8 +62,8 @@ export async function GET() {
           quick_answer: row.quickAnswer,
           citation_summary: row.citationSummary,
           entity_mentions: row.entityMentions ?? [],
-          published_at: row.publishedAt?.toISOString() ?? null,
-          updated_at: row.updatedAt?.toISOString() ?? null,
+          published_at: safeISOString(row.publishedAt) ?? null,
+          updated_at: safeISOString(row.updatedAt) ?? null,
         })),
       },
       {

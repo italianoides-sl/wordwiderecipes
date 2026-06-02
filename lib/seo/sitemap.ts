@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
+import { safeISOString } from '@/lib/utils/date';
 
 const getSitemapEntryRows = unstable_cache(
   async () => {
@@ -22,6 +23,6 @@ export async function buildSitemapEntries() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
   return rows.map((row) => ({
     url: `${baseUrl}/${row.type}/${row.slug}`,
-    lastmod: row.updatedAt?.toISOString() ?? new Date().toISOString(),
+    lastmod: safeISOString(row.updatedAt),
   }));
 }
