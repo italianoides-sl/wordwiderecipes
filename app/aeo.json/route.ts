@@ -1,17 +1,14 @@
 import { desc, eq } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
 export const dynamic = 'force-dynamic';
 
-function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
-}
-
-export async function GET() {
-  try {
-    const rows = await db
+const getAeoRows = unstable_cache(
+  async () => {
+    return db
       .select({
         title: content.title,
         locale: content.locale,
@@ -29,6 +26,18 @@ export async function GET() {
       .where(eq(content.status, 'published'))
       .orderBy(desc(content.updatedAt))
       .limit(50);
+  },
+  ['db:aeo-feed'],
+  { revalidate: 3600 },
+);
+
+function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
+  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
+}
+
+export async function GET() {
+  try {
+    const rows = await getAeoRows();
 
     return Response.json(
       {

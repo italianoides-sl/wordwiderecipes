@@ -1,8 +1,6 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
 import ContentGrid from '@/components/content/ContentGrid';
-import { content, db } from '@/lib/db/schema';
+import { getContentSearchFallback } from '@/lib/db/queries';
 import { buildPageMetadata } from '@/lib/seo/metadata';
-import type { Content } from '@/lib/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,31 +12,9 @@ export function generateMetadata() {
   });
 }
 
-async function search(query: string): Promise<Content[]> {
-  const q = query.trim();
-  if (!q) return [];
-  const like = `%${q}%`;
-
-  return db
-    .select()
-    .from(content)
-    .where(
-      and(
-        eq(content.status, 'published'),
-        sql`(
-          ${content.title} ilike ${like}
-          OR ${content.metaDescription} ilike ${like}
-          OR ${content.cuisine} ilike ${like}
-        )`,
-      ),
-    )
-    .orderBy(desc(content.publishedAt))
-    .limit(24);
-}
-
 export default async function SearchPage({ searchParams }: { searchParams?: { q?: string } }) {
   const query = searchParams?.q?.trim() ?? '';
-  const results = await search(query);
+  const results = query ? await getContentSearchFallback(query, 'es', 24) : [];
 
   return (
     <main className="wwr-page directory-page">

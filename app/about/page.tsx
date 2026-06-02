@@ -24,7 +24,7 @@ export default function AboutPage() {
           <p className="da-legal-kicker">About</p>
           <h1>About WorldWideRecipes</h1>
           <p>WorldWideRecipes is a culinary atlas built by a professional chef based in Ibiza. Our mission: make the world&apos;s gastronomy accessible in Spanish and English, with editorial rigour and a chef&apos;s perspective.</p>
-          <p>Our articles are written with artificial intelligence assistance (OpenAI) and reviewed against editorial quality standards before publication. Each page includes real cultural context, verified techniques, and a human perspective.</p>
+          <p>Our articles are written with artificial intelligence assistance (Google Gemini) and reviewed against editorial quality standards before publication. Each page includes real cultural context, verified techniques, and a human perspective.</p>
           <p>We&apos;re also <strong><a href={tiktokUrl} target="_blank" rel="noopener noreferrer">@tuvirtualchef</a></strong> on TikTok, where we publish photo-recipes in under a minute: swipe, read, cook.</p>
 
           <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '6px', padding: '20px', margin: '32px 0' }}>
@@ -49,7 +49,7 @@ export default function AboutPage() {
         <p className="da-legal-kicker">Sobre nosotros</p>
         <h1>Sobre WorldWideRecipes</h1>
         <p>WorldWideRecipes es un atlas culinario creado por un chef profesional con base en Ibiza. Nuestra misión: hacer accesible la gastronomía mundial en español e inglés, con rigor editorial y mirada de chef.</p>
-        <p>Nuestros artículos son redactados con asistencia de inteligencia artificial (OpenAI) y revisados por estándares de calidad editorial antes de publicarse. Cada página incluye contexto cultural real, técnicas verificadas y una perspectiva humana.</p>
+        <p>Nuestros artículos son redactados con asistencia de inteligencia artificial (Google Gemini) y revisados por estándares de calidad editorial antes de publicarse. Cada página incluye contexto cultural real, técnicas verificadas y una perspectiva humana.</p>
         <p>También somos <strong><a href={tiktokUrl} target="_blank" rel="noopener noreferrer">@tuvirtualchef</a></strong> en TikTok, donde publicamos foto-recetas de menos de un minuto: desliza, lee, cocina.</p>
 
         <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '6px', padding: '20px', margin: '32px 0' }}>

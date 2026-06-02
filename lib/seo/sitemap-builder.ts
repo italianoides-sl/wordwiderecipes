@@ -1,4 +1,5 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
 import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
 
 const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
@@ -65,6 +66,62 @@ function inferOptionsForFile(file: string): { type?: ContentType; locale?: Local
   return { filterPages: true };
 }
 
+const getMainSitemapRows = unstable_cache(
+  async () => {
+    return db
+      .select({
+        slug: content.slug,
+        locale: content.locale,
+        type: content.type,
+        canonicalUrl: content.canonicalUrl,
+        updatedAt: content.updatedAt,
+      })
+      .from(content)
+      .where(eq(content.status, 'published'))
+      .orderBy(desc(content.updatedAt));
+  },
+  ['db:sitemap-main-rows'],
+  { revalidate: 3600 },
+);
+
+const getSitemapRows = unstable_cache(
+  async (type?: ContentType, locale?: Locale) => {
+    const whereParts: SQL[] = [eq(content.status, 'published')];
+    if (type) whereParts.push(eq(content.type, type));
+    if (locale) whereParts.push(eq(content.locale, locale));
+
+    return db
+      .select({
+        slug: content.slug,
+        locale: content.locale,
+        type: content.type,
+        canonicalUrl: content.canonicalUrl,
+        updatedAt: content.updatedAt,
+      })
+      .from(content)
+      .where(and(...whereParts))
+      .orderBy(desc(content.updatedAt));
+  },
+  ['db:sitemap-filtered-rows'],
+  { revalidate: 3600 },
+);
+
+const getFilterPagesRows = unstable_cache(
+  async () => {
+    return db
+      .selectDistinct({
+        locale: content.locale,
+        type: content.type,
+        cuisine: content.cuisine,
+        difficulty: content.difficulty,
+      })
+      .from(content)
+      .where(eq(content.status, 'published'));
+  },
+  ['db:sitemap-filter-pages-rows'],
+  { revalidate: 3600 },
+);
+
 export async function buildSitemapIndex(): Promise<string> {
   const now = new Date().toISOString();
   const entries = SITEMAP_FILES.map((file) => [
@@ -83,17 +140,7 @@ export async function buildSitemapIndex(): Promise<string> {
 }
 
 export async function buildMainSitemap(): Promise<string> {
-  const rows = await db
-    .select({
-      slug: content.slug,
-      locale: content.locale,
-      type: content.type,
-      canonicalUrl: content.canonicalUrl,
-      updatedAt: content.updatedAt,
-    })
-    .from(content)
-    .where(eq(content.status, 'published'))
-    .orderBy(desc(content.updatedAt));
+  const rows = await getMainSitemapRows();
 
   if (!rows.length) {
     return sitemapXml([
@@ -128,36 +175,14 @@ export async function buildSitemap(options: {
 
   const type = options.type ?? inferred.type;
   const locale = options.locale ?? inferred.locale;
-  const whereParts: SQL[] = [eq(content.status, 'published')];
-  if (type) whereParts.push(eq(content.type, type));
-  if (locale) whereParts.push(eq(content.locale, locale));
-
-  const rows = await db
-    .select({
-      slug: content.slug,
-      locale: content.locale,
-      type: content.type,
-      canonicalUrl: content.canonicalUrl,
-      updatedAt: content.updatedAt,
-    })
-    .from(content)
-    .where(and(...whereParts))
-    .orderBy(desc(content.updatedAt));
+  const rows = await getSitemapRows(type, locale);
 
   const entries = rows.map((row) => urlEntry(contentUrl(row), row.updatedAt, priorityFor(row.type), 'weekly'));
   return sitemapXml(entries);
 }
 
 async function buildFilterPagesSitemap() {
-  const rows = await db
-    .selectDistinct({
-      locale: content.locale,
-      type: content.type,
-      cuisine: content.cuisine,
-      difficulty: content.difficulty,
-    })
-    .from(content)
-    .where(eq(content.status, 'published'));
+  const rows = await getFilterPagesRows();
 
   const urls = new Set<string>([`${BASE_URL}/`]);
   for (const row of rows) {

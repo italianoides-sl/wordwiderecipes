@@ -1,9 +1,32 @@
 import { desc, eq } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
 export const dynamic = 'force-dynamic';
+
+const getLlmsRows = unstable_cache(
+  async () => {
+    return db
+      .select({
+        title: content.title,
+        locale: content.locale,
+        type: content.type,
+        slug: content.slug,
+        canonicalUrl: content.canonicalUrl,
+        quickAnswer: content.quickAnswer,
+        citationSummary: content.citationSummary,
+        updatedAt: content.updatedAt,
+      })
+      .from(content)
+      .where(eq(content.status, 'published'))
+      .orderBy(desc(content.updatedAt))
+      .limit(30);
+  },
+  ['db:llms-feed'],
+  { revalidate: 3600 },
+);
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
   return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
@@ -22,21 +45,7 @@ export async function GET() {
   }> = [];
 
   try {
-    rows = await db
-      .select({
-        title: content.title,
-        locale: content.locale,
-        type: content.type,
-        slug: content.slug,
-        canonicalUrl: content.canonicalUrl,
-        quickAnswer: content.quickAnswer,
-        citationSummary: content.citationSummary,
-        updatedAt: content.updatedAt,
-      })
-      .from(content)
-      .where(eq(content.status, 'published'))
-      .orderBy(desc(content.updatedAt))
-      .limit(30);
+    rows = await getLlmsRows();
   } catch (error) {
     console.error('llms.txt generation failed', error);
   }
@@ -48,7 +57,7 @@ export async function GET() {
     '',
     'Canonical site: https://worldwiderecipes.app',
     'Contact: contact@worldwiderecipes.app',
-    'Editorial approach: AI-assisted drafting with OpenAI, quality validation, human editorial standards, chef perspective, Unsplash photo attribution.',
+    'Editorial approach: AI-assisted drafting with Google Gemini, quality validation, human editorial standards, chef perspective, Unsplash photo attribution.',
     '',
     '## Primary URLs',
     `- Homepage: ${BASE_URL}/`,

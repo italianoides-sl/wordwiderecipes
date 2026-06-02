@@ -7,20 +7,20 @@
  *
  * What it does:
  *   1. Connects to Supabase via DATABASE_URL
- *   2. Connects to OpenAI via OPENAI_API_KEY
+ *   2. Connects to Gemini via GEMINI_API_KEY
  *   3. Connects to Unsplash via UNSPLASH_ACCESS_KEY
- *   4. Asks OpenAI for 10 diverse culinary topics
+ *   4. Asks Gemini for 10 diverse culinary topics
  *   5. Runs each through the full content pipeline
  *   6. Persists every article to Supabase (quality gate + images included)
  *
  * Required env vars:
  *   DATABASE_URL          — Neon / Postgres connection string
- *   OPENAI_API_KEY        — OpenAI API key
+ *   GEMINI_API_KEY        — Gemini API key
  *   UNSPLASH_ACCESS_KEY   — Unsplash access key
  *
  * Optional:
  *   NEXT_PUBLIC_BASE_URL  — canonical origin (default: https://worldwiderecipes.app)
- *   AI_MODEL              — OpenAI model override (default: gpt-4o-mini)
+ *   GEMINI_MODEL          — Gemini model override (default: gemini-2.5-flash)
  *   CONTENT_PROMPT_VERSION — prompt version tag  (default: v1.0)
  *   TOPICS_COUNT          — how many articles to generate (default: 10)
  */
@@ -59,7 +59,7 @@ function sleep(ms: number) {
 
 /** Abort early with a clear error message when a required env var is missing. */
 function validateEnv() {
-  const required = ['DATABASE_URL', 'OPENAI_API_KEY', 'UNSPLASH_ACCESS_KEY'];
+  const required = ['DATABASE_URL', 'GEMINI_API_KEY', 'UNSPLASH_ACCESS_KEY'];
   const missing = required.filter((key) => !process.env[key]?.trim());
 
   if (missing.length > 0) {
@@ -168,7 +168,7 @@ async function main() {
       results.push({ topic, contentType, locale, success: false, error: msg, durationMs });
     }
 
-    // Small pause between articles — avoids hammering OpenAI / Unsplash rate limits
+    // Small pause between articles — avoids hammering Gemini / Unsplash rate limits
     if (i < topics.length - 1) {
       await sleep(2_000);
     }

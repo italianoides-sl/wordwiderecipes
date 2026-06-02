@@ -28,7 +28,7 @@ export default function TermsPage() {
           <h2>Affiliate links</h2>
           <p>Some links on this site are Amazon affiliate links. We earn a small commission on qualifying purchases at no additional cost to you.</p>
           <h2>AI-generated content</h2>
-          <p>Content on this site is written with OpenAI assistance and reviewed editorially for quality, accuracy, and cultural context. WorldWideRecipes is responsible for all published content.</p>
+          <p>Content on this site is written with Google Gemini assistance and reviewed editorially for quality, accuracy, and cultural context. WorldWideRecipes is responsible for all published content.</p>
           <h2>Intellectual property</h2>
           <p>All content on worldwiderecipes.app is the intellectual property of WorldWideRecipes unless otherwise noted. You may not reproduce or redistribute content without written permission.</p>
           <h2>Governing law</h2>
@@ -51,7 +51,7 @@ export default function TermsPage() {
         <h2>Enlaces de afiliado</h2>
         <p>Algunos enlaces de este sitio son enlaces de afiliado de Amazon. Ganamos una pequeña comisión por compras realizadas a través de dichos enlaces, sin coste adicional para ti.</p>
         <h2>Contenido generado con IA</h2>
-        <p>El contenido de este sitio se redacta con asistencia de OpenAI y se revisa editorialmente para garantizar calidad, precisión y contexto cultural. WorldWideRecipes es responsable de todo el contenido publicado.</p>
+        <p>El contenido de este sitio se redacta con asistencia de Google Gemini y se revisa editorialmente para garantizar calidad, precisión y contexto cultural. WorldWideRecipes es responsable de todo el contenido publicado.</p>
         <h2>Propiedad intelectual</h2>
         <p>Todo el contenido de worldwiderecipes.app es propiedad intelectual de WorldWideRecipes, salvo indicación contraria. No puedes reproducir ni redistribuir contenido sin permiso escrito.</p>
         <h2>Ley aplicable</h2>
