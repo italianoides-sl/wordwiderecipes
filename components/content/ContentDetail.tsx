@@ -70,7 +70,7 @@ export default function ContentDetail({ content, related }: { content: Content; 
 
   return (
     <main className="rp-shell">
-      <JsonLd id={`schema-article-${content.id}`} data={content.schemaArticle ?? schemas.article} />
+      <JsonLd id={`schema-article-${content.id}`} data={schemas.article} />
       <JsonLd id={`schema-recipe-${content.id}`} data={schemas.recipe} />
       <JsonLd id={`schema-howto-${content.id}`} data={schemas.howto} />
       <JsonLd id={`schema-faq-${content.id}`} data={schemas.faq} />
