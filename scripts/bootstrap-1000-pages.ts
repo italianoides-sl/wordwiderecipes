@@ -1,157 +1,220 @@
-import { and, eq, sql } from 'drizzle-orm';
-import { generateJSON } from '@/lib/ai/openai';
+import { eq } from 'drizzle-orm';
 import { bootstrapContentPages } from '@/lib/content/bootstrap';
-import { CONTENT_PLAN, CONTENT_PLAN_TOTAL, type ContentPlanCategory } from '@/lib/content/content-plan';
 import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
 
-type Topic = { topic: string; contentType?: ContentType; content_type?: ContentType; locale: Locale };
-type TopicResponse = { topics?: Topic[]; trends?: Topic[]; items?: Topic[] };
+type ViralTopic = { topic: string; contentType: ContentType; locale: Locale };
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const VIRAL_TOPICS: ViralTopic[] = [
+  // RECETAS - Postres
+  { topic: "Cheesecake japonés de dos ingredientes sin horno", contentType: "recipe", locale: "es-mx" },
+  { topic: "Cheesecake de yogur con topping de frambuesa", contentType: "recipe", locale: "es" },
+  { topic: "Cheesecake de yogur y Biscoff", contentType: "recipe", locale: "es-mx" },
+  { topic: "Cheesecake japonés alto en proteína versión fit", contentType: "recipe", locale: "es" },
+  { topic: "Tarta fría de yogur y galletas estilo japonés", contentType: "recipe", locale: "es-mx" },
+  { topic: "Cheesecake estilo San Sebastián versión casera", contentType: "recipe", locale: "es" },
+  { topic: "Postre viral de café cremoso sin horno", contentType: "recipe", locale: "es-mx" },
+  { topic: "Flan de caramelo y café versión viral", contentType: "recipe", locale: "es" },
+  { topic: "Mousse de café ligera para nevera", contentType: "recipe", locale: "es-mx" },
+  { topic: "Postre de café bajo en calorías en vasitos", contentType: "recipe", locale: "es" },
+
+  // RECETAS - Carnes y pollo
+  { topic: "Kebab saludable de pollo al horno sin aceite", contentType: "recipe", locale: "es-mx" },
+  { topic: "Doner kebab casero de res con salsa de yogur", contentType: "recipe", locale: "es" },
+  { topic: "Shawarma de carne picada en papel de horno", contentType: "recipe", locale: "es-mx" },
+  { topic: "Chicken César bites proteicos para meal prep", contentType: "recipe", locale: "es" },
+  { topic: "Wrap viral de pollo César en 15 minutos", contentType: "recipe", locale: "es-mx" },
+  { topic: "Tamal de cárcel receta auténtica mexicana", contentType: "recipe", locale: "es-mx" },
+  { topic: "Hamburguesa casera jugosa estilo viral", contentType: "recipe", locale: "es" },
+  { topic: "Sopita de pollo para congelar y reutilizar", contentType: "recipe", locale: "es-mx" },
+  { topic: "Albóndigas de pollo para táper o bowl semanal", contentType: "recipe", locale: "es" },
+  { topic: "Pollo jugoso en sartén con mantequilla y limón", contentType: "recipe", locale: "es-mx" },
+  { topic: "Pollo asado reciclado en arroz de entre semana", contentType: "recipe", locale: "es" },
+  { topic: "Kebab de pollo para meal prep en una sola hornada", contentType: "recipe", locale: "es-mx" },
+
+  // RECETAS - Pescados y mariscos
+  { topic: "Pescado frito casero estilo bar de barrio", contentType: "recipe", locale: "es" },
+  { topic: "Tacos dorados de camarón con pico de gallo", contentType: "recipe", locale: "es-mx" },
+  { topic: "Merluza al vapor con soja limón y jengibre", contentType: "recipe", locale: "es" },
+  { topic: "Cachopo de pescado versión casera", contentType: "recipe", locale: "es" },
+  { topic: "Filetes de pescado en salsa cremosa de limón y ajo", contentType: "recipe", locale: "es-mx" },
+  { topic: "Cazuela de mariscos con sofrito intenso", contentType: "recipe", locale: "es" },
+  { topic: "Sopa de marisco con latas y fondo cremoso", contentType: "recipe", locale: "es-mx" },
+  { topic: "Crema de pescado rápida para cenas ligeras", contentType: "recipe", locale: "es" },
+  { topic: "Caldereta de pescado y marisco de fin de semana", contentType: "recipe", locale: "es" },
+  { topic: "Pescado afro con sazón caribeño", contentType: "recipe", locale: "es-mx" },
+
+  // RECETAS - Verduras
+  { topic: "Verduras listas en 15 minutos con robot de cocina", contentType: "recipe", locale: "es-mx" },
+  { topic: "Tres recetas con verduras de mayo sin repetir", contentType: "recipe", locale: "es" },
+  { topic: "Pisto de verduras asadas para toda la semana", contentType: "recipe", locale: "es" },
+  { topic: "Zanahorias con salmón ahumado como plato principal", contentType: "recipe", locale: "es-mx" },
+  { topic: "Ensalada de brócoli fresca para verano", contentType: "recipe", locale: "es" },
+  { topic: "Verduras asadas para batch cooking semanal", contentType: "recipe", locale: "es-mx" },
+  { topic: "Bowl de verduras de mayo con vinagreta de mostaza", contentType: "recipe", locale: "es" },
+  { topic: "Ensalada de temporada con pollo y vinagreta ligera", contentType: "recipe", locale: "es-mx" },
+  { topic: "Pisto exprés con verduras de mayo y huevo", contentType: "recipe", locale: "es" },
+  { topic: "Calabacín pimiento y brócoli en una sola bandeja", contentType: "recipe", locale: "es-mx" },
+
+  // RECETAS - Bebidas
+  { topic: "Mocktail de sandía y albahaca sin alcohol", contentType: "recipe", locale: "es-mx" },
+  { topic: "Bebida de sandía con jamaica y hielo", contentType: "recipe", locale: "es-mx" },
+  { topic: "Sangría casera con fruta y especias de verano", contentType: "recipe", locale: "es" },
+  { topic: "Té helado casero estilo cafetería", contentType: "recipe", locale: "es-mx" },
+  { topic: "Smoothie de fresa y yogur griego proteico", contentType: "recipe", locale: "es" },
+  { topic: "Smoothie de papaya y cúrcuma antiinflamatorio", contentType: "recipe", locale: "es-mx" },
+  { topic: "Latte con miel batida estilo home café", contentType: "recipe", locale: "es" },
+  { topic: "Frappé al flan bebida postre viral de verano", contentType: "recipe", locale: "es-mx" },
+  { topic: "Smoothie bowl de verano con toppings crujientes", contentType: "recipe", locale: "es" },
+  { topic: "Batido indulgente estilo milkshake de chocolate", contentType: "recipe", locale: "es-mx" },
+
+  // TÉCNICAS - Verduras
+  { topic: "Cómo cortar cebolla en ciselado perfecto para sofritos", contentType: "technique", locale: "es" },
+  { topic: "Corte pluma de cebolla para fajitas y salteados", contentType: "technique", locale: "es-mx" },
+  { topic: "Juliana de cebolla bien hecha para que la textura cambie", contentType: "technique", locale: "es" },
+  { topic: "Brunoise en verduras cuándo usarlo y cuándo no", contentType: "technique", locale: "es-mx" },
+  { topic: "Bastones de zanahoria perfectos para horno y freidora", contentType: "technique", locale: "es" },
+  { topic: "Cómo cortar cebolla sin llorar técnica definitiva", contentType: "technique", locale: "es-mx" },
+  { topic: "Cómo usar el robot de cocina sin convertir verduras en puré", contentType: "technique", locale: "es" },
+  { topic: "Cortes de verduras para ensalada salteado u horno", contentType: "technique", locale: "es-mx" },
+  { topic: "Cómo elegir y afilar el cuchillo correcto para cocinar", contentType: "technique", locale: "es" },
+  { topic: "Mise en place vegetal para empezar el meal prep sin estrés", contentType: "technique", locale: "es-mx" },
+
+  // TÉCNICAS - Carnes
+  { topic: "Despiece de pollo paso a paso para ahorrar dinero", contentType: "technique", locale: "es-mx" },
+  { topic: "Temperaturas correctas del pollo y la res sin termómetro", contentType: "technique", locale: "es" },
+  { topic: "Regla del pollo jugoso al horno 25 minutos por kilo", contentType: "technique", locale: "es-mx" },
+  { topic: "Cómo sellar carne correctamente para costra y jugosidad", contentType: "technique", locale: "es" },
+  { topic: "Cómo formar un kebab casero que no se rompa al cortar", contentType: "technique", locale: "es-mx" },
+  { topic: "Cómo marinar pollo para máximo sabor y jugosidad", contentType: "technique", locale: "es" },
+  { topic: "Cómo reaprovechar pollo asado con método y sin desperdiciar", contentType: "technique", locale: "es-mx" },
+  { topic: "Técnica de sartén para pechuga de pollo jugosa sin secar", contentType: "technique", locale: "es" },
+  { topic: "Cómo usar la freidora de aire para pollo crujiente", contentType: "technique", locale: "es-mx" },
+  { topic: "Sellado reposo y sazón la tríada mínima para carne perfecta", contentType: "technique", locale: "es" },
+
+  // TÉCNICAS - Pescados
+  { topic: "Cómo cocinar pescado a la plancha sin que se rompa ni pegue", contentType: "technique", locale: "es-mx" },
+  { topic: "La técnica de secado y sartén caliente para pescado perfecto", contentType: "technique", locale: "es" },
+  { topic: "Atún salmón y bacalao no se cocinan igual guía de tiempos", contentType: "technique", locale: "es-mx" },
+  { topic: "Merluza al vapor con textura jugosa y sabor limpio", contentType: "technique", locale: "es" },
+  { topic: "Salsas cortas para pescado blanco que parecen de restaurante", contentType: "technique", locale: "es-mx" },
+  { topic: "La base de sofrito para cazuelas y sopas de marisco", contentType: "technique", locale: "es" },
+  { topic: "Cómo freír pescado con crujiente perfecto sin resecar", contentType: "technique", locale: "es-mx" },
+  { topic: "Cómo evitar que el pescado se pegue a la sartén", contentType: "technique", locale: "es" },
+  { topic: "Cocina marina para freidora de aire tiempos y temperaturas", contentType: "technique", locale: "es-mx" },
+  { topic: "Cómo limpiar y preparar marisco fresco en casa", contentType: "technique", locale: "es" },
+
+  // GUÍAS - Meal prep
+  { topic: "Batch cooking vs meal prep diferencias y cuándo usar cada uno", contentType: "guide", locale: "es-mx" },
+  { topic: "Guía completa de meal prep por proteínas verduras y carbohidratos", contentType: "guide", locale: "es" },
+  { topic: "Ocho preparaciones en dos horas la plantilla semanal definitiva", contentType: "guide", locale: "es-mx" },
+  { topic: "Cómo cocinar para toda la semana en dos horas sin aburrirse", contentType: "guide", locale: "es" },
+  { topic: "Cómo armar cuatro bases de menú y dejar de improvisar", contentType: "guide", locale: "es-mx" },
+  { topic: "El método de cocinar una vez y comer cinco días", contentType: "guide", locale: "es" },
+  { topic: "Cómo hacer meal prep que no sepa a sobras tristes", contentType: "guide", locale: "es-mx" },
+  { topic: "Planificación semanal empezando por proteínas no por platos", contentType: "guide", locale: "es" },
+
+  // GUÍAS - Menús y temporada
+  { topic: "Frutas y verduras de mayo guía de compra y cocina", contentType: "guide", locale: "es" },
+  { topic: "Menú semanal de mayo para dejar de improvisar cada día", contentType: "guide", locale: "es-mx" },
+  { topic: "Qué comprar en mayo para comer mejor gastando menos", contentType: "guide", locale: "es" },
+  { topic: "Cómo convertir verduras de mayo en desayunos comidas y cenas", contentType: "guide", locale: "es-mx" },
+  { topic: "El menú que nace de un pisto verduras asadas y dos proteínas", contentType: "guide", locale: "es" },
+  { topic: "Guía de temporada para primavera tardía ingredientes y recetas", contentType: "guide", locale: "es-mx" },
+  { topic: "Menús de temporada para junio con enfoque saludable", contentType: "guide", locale: "es" },
+  { topic: "Calendario de producto de temporada primavera verano España y México", contentType: "guide", locale: "es-mx" },
+
+  // GUÍAS - Planificación y salud
+  { topic: "Cómo usar el método del plato sin obsesionarse con macros", contentType: "guide", locale: "es" },
+  { topic: "Cómo planificar la semana para ahorrar dinero y reducir estrés", contentType: "guide", locale: "es-mx" },
+  { topic: "Cómo pasar de ver recetas a tener un sistema de alimentación", contentType: "guide", locale: "es" },
+  { topic: "La cocina de mayo en una guía verduras pescado postre y bebida", contentType: "guide", locale: "es-mx" },
+  { topic: "Las cinco tendencias culinarias más claras para junio 2026", contentType: "guide", locale: "es" },
+  { topic: "Cómo aprovechar la ola de bebidas frías sin descuidar el evergreen", contentType: "guide", locale: "es-mx" },
+  { topic: "Guía para detectar cuándo una moda de TikTok ya es oportunidad SEO", contentType: "guide", locale: "es" },
+  { topic: "Manual para convertir señales sociales en artículos que posicionen", contentType: "guide", locale: "es-mx" },
+];
+
+function inferCategory(contentType: ContentType): string {
+  if (contentType === 'technique') return 'tecnicas';
+  if (contentType === 'guide') return 'guias';
+  return 'recetas';
+}
+
 async function getExistingTitles() {
   const existing = await db
-    .select({ title: content.title, slug: content.slug })
+    .select({ title: content.title })
     .from(content)
     .where(eq(content.status, 'published'));
 
-  return existing.map((row) => row.title.toLowerCase());
-}
-
-async function countPublishedInCategory(category: ContentPlanCategory) {
-  const [row] = await db
-    .select({ count: sql`count(*)` })
-    .from(content)
-    .where(
-      and(
-        eq(content.status, 'published'),
-        eq(content.type, category.type),
-        sql`(${content.category} = ${category.category} OR ${content.originalData}->>'content_category' = ${category.category})`,
-      ),
-    );
-
-  return Number(row?.count ?? 0);
-}
-
-async function generateTopics(category: ContentPlanCategory, count: number, existingTitles: string[]) {
-  const topicsResponse = await generateJSON<Topic[] | TopicResponse>(`
-Generate ${count} specific Spanish-language culinary content topics for WorldWideRecipes.
-
-Category: ${category.category}
-Content type: ${category.type}
-Category focus:
-${category.prompt_focus}
-
-Also consider these current food trends (2025-2026):
-- Smash burgers and Oklahoma onion smash style
-- Korean corn dogs (gamja-hotdog)
-- Birria tacos and quesabirria
-- Butter boards and compound butters
-- Dubai chocolate with pistachio cream
-- Levantine cuisine (Lebanese, Syrian, Israeli)
-- Peruvian fusion and nikkei cuisine
-- Filipino adobo variations
-- West African cuisine (jollof, egusi, suya)
-- Japanese convenience store food recreations
-- Fermented and probiotic foods
-- Zero-waste cooking and root-to-stem
-- Air fryer adaptations of classic recipes
-- Cottage cheese high-protein recipes
-- Viral TikTok recipes: pasta chips, cloud bread, baked oats
-
-Incorporate these trends naturally when relevant to the category.
-Don't force them — only use when they fit the category focus.
-
-DO NOT generate any of these already published topics:
-${existingTitles.slice(0, 100).join(', ') || 'No published topics yet.'}
-
-Generate something completely different.
-Use locales es-mx and es, with a slight preference for es-mx.
-Avoid generic topics. Every topic must be specific enough to become a definitive article.
-
-Return a JSON object with this exact structure:
-{
-  "topics": [
-    {"topic":"specific topic","contentType":"${category.type}","locale":"es-mx"}
-  ]
-}
-The topics array must contain exactly ${count} items.
-  `);
-
-  const topics = Array.isArray(topicsResponse)
-    ? topicsResponse
-    : (topicsResponse.topics ?? topicsResponse.trends ?? topicsResponse.items ?? []);
-
-  if (!Array.isArray(topics) || topics.length === 0) {
-    throw new Error(`No bootstrap topics returned for ${category.category}`);
-  }
-
-  return topics.slice(0, count).map((topic) => ({
-    topic: topic.topic,
-    contentType: topic.content_type ?? topic.contentType ?? category.type,
-    locale: topic.locale,
-    contentCategory: category.category,
-    promptFocus: category.prompt_focus,
-  }));
-}
-
-async function generateBatch(category: ContentPlanCategory, count: number) {
-  const existingTitles = await getExistingTitles();
-  const topics = await generateTopics(category, count, existingTitles);
-  const results = await bootstrapContentPages(topics);
-  const generated = results.filter((result) => result.success).length;
-
-  console.log(`${category.category}: generated ${generated}/${count}`);
-  return { generated, results };
+  return new Set(existing.map((row) => row.title.toLowerCase()));
 }
 
 async function main() {
-  console.log(`Bootstrap: ${CONTENT_PLAN_TOTAL} total pages planned`)
-  console.log(`Starting at: ${new Date().toISOString()}`)
+  console.log(`Bootstrap viral topics: ${VIRAL_TOPICS.length} total`);
+  console.log(`Starting at: ${new Date().toISOString()}`);
 
-  for (const category of CONTENT_PLAN) {
-    let existingCount = await countPublishedInCategory(category)
-    let needed = category.quota - existingCount
-    
-    if (needed <= 0) {
-      console.log(`✅ ${category.category}: already complete (${existingCount}/${category.quota})`)
-      continue
-    }
+  const existingTitles = await getExistingTitles();
 
-    console.log(`📝 ${category.category}: need ${needed} more (${existingCount}/${category.quota})`)
+  const pending = VIRAL_TOPICS.filter((t) => !existingTitles.has(t.topic.toLowerCase()));
 
-    while (needed > 0) {
-      // Generate 20 per batch instead of 10
-      const batch = Math.min(20, needed)
-      
-      try {
-        const { generated } = await generateBatch(category, batch)
+  console.log(
+    `${pending.length} topics pending (${VIRAL_TOPICS.length - pending.length} already published)`,
+  );
 
-        if (generated === 0) {
-          console.warn(`⚠️ ${category.category}: 0 generated, retrying in 30s...`)
-          await sleep(30000)
-          continue
-        }
-
-        // Shorter sleep with Unsplash production (1000 req/hr)
-        await sleep(3000)
-        
-        existingCount = await countPublishedInCategory(category)
-        needed = category.quota - existingCount
-        
-        console.log(`📊 ${category.category}: ${existingCount}/${category.quota} — ${Math.max(needed, 0)} remaining`)
-      } catch (err) {
-        console.error(`❌ ${category.category} batch error:`, err)
-        await sleep(15000) // wait 15s on error then retry
-      }
-    }
-    
-    console.log(`✅ ${category.category}: COMPLETE`)
+  if (pending.length === 0) {
+    console.log('All viral topics already published!');
+    return;
   }
 
-  console.log(`🎉 Bootstrap complete at: ${new Date().toISOString()}`)
+  const BATCH_SIZE = 5;
+  let published = 0;
+  let failed = 0;
+
+  for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+    const batch = pending.slice(i, i + BATCH_SIZE);
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(pending.length / BATCH_SIZE);
+
+    console.log(`\nBatch ${batchNum}/${totalBatches}: ${batch.map((t) => t.topic).join(' | ')}`);
+
+    try {
+      const results = await bootstrapContentPages(
+        batch.map((t) => ({
+          topic: t.topic,
+          contentType: t.contentType,
+          locale: t.locale,
+          contentCategory: inferCategory(t.contentType),
+        })),
+      );
+
+      const succeeded = results.filter((r) => r.success).length;
+      const errored = results.length - succeeded;
+      published += succeeded;
+      failed += errored;
+
+      console.log(
+        `Batch ${batchNum}: ${succeeded}/${batch.length} published. Running total: ${published} published, ${failed} failed`,
+      );
+
+      if (succeeded === 0) {
+        console.warn(`⚠️ Zero successes in batch ${batchNum}, waiting 30s...`);
+        await sleep(30000);
+      } else {
+        await sleep(3000);
+      }
+    } catch (err) {
+      console.error(`❌ Batch ${batchNum} error:`, err);
+      failed += batch.length;
+      await sleep(15000);
+    }
+  }
+
+  console.log(`\n🎉 Bootstrap complete at: ${new Date().toISOString()}`);
+  console.log(`Published: ${published} | Failed: ${failed} | Total attempted: ${pending.length}`);
 }
 
 void main();

@@ -14,7 +14,20 @@ export async function indexUrl(url: string): Promise<boolean> {
   }
 
   try {
-    const credentials = JSON.parse(key);
+    const rawKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY!;
+    const cleaned = rawKey.replace(/\r/g, '').trim();
+
+    let credentials: any;
+    try {
+      credentials = JSON.parse(cleaned);
+    } catch (parseErr) {
+      const escaped = cleaned.replace(/\n/g, '\\n');
+      credentials = JSON.parse(escaped);
+    }
+
+    if (credentials.private_key) {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    }
 
     const auth = new google.auth.JWT({
       email: credentials.client_email,
