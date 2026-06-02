@@ -12,8 +12,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function Page({ params }: { params: { slug: string } }) {
-  const content = await getContentBySlugOnly(params.slug).catch(() => null);
-  if (!content) notFound();
-  const related = await getRelatedContentForContent(content).catch(() => []);
-  return <ContentDetail content={content} related={related} />;
+  try {
+    const content = await getContentBySlugOnly(params.slug).catch(() => null);
+    if (!content) return notFound();
+    const related = await getRelatedContentForContent(content).catch(() => []);
+    return <ContentDetail content={content} related={related} />;
+  } catch (error) {
+    console.error('TechniquePage error:', error);
+    return notFound();
+  }
 }

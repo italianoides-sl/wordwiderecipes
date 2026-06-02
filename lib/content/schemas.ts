@@ -174,53 +174,50 @@ function baseFields(content: Content): Record<string, unknown> {
 
 export function buildRecipeSchema(content: Content): RecipeSchema {
   const data = body(content);
-  const imgs = imagesArray(content);
+  const images = Array.isArray(data.images) ? (data.images as any[]) : [];
+  const steps = Array.isArray(data.steps) ? (data.steps as any[]) : [];
+  const ingredients = Array.isArray(data.ingredients) ? (data.ingredients as any[]) : [];
+  const keywords = Array.isArray(data.keywords)
+    ? data.keywords.map(textFromObject).filter(Boolean).join(', ')
+    : typeof data.keywords === 'string'
+    ? data.keywords
+    : content.title ?? 'receta';
 
-  const ingredients = arrayField(data.ingredients).map(recipeIngredient).filter(Boolean);
-  const steps = arrayField(data.steps).map((step, i) => ({
-    '@type': 'HowToStep',
-    position: i + 1,
-    name: stepName(step),
-    text: textFromObject(step),
-    ...(imgs.length ? { image: imgs[i % imgs.length] } : {}),
-  }));
+  const primaryImage = content.imageUrl ?? images?.[0]?.url ?? LOGO_URL;
 
-  // AggregateRating: use body data first; fall back to editorial qualityScore (1-10 scale).
-  const rating =
-    aggregateRating(data.aggregateRating ?? data.aggregate_rating ?? data.rating) ??
-    (() => {
-      const score = typeof content.qualityScore === 'string' ? parseFloat(content.qualityScore) : null;
-      if (!score || score <= 0) return undefined;
-      return {
-        '@type': 'AggregateRating',
-        ratingValue: score.toFixed(1),
-        ratingCount: '1',
-        bestRating: '10',
-        worstRating: '1',
-      };
-    })();
-
-  const nutrition = data.nutrition
-    ? { '@type': 'NutritionInformation', ...(data.nutrition as Record<string, unknown>) }
-    : { '@type': 'NutritionInformation', servingSize: '1 porción' };
-
-  return stripUndefined({
+  const recipeSchema = stripUndefined({
     '@context': 'https://schema.org',
     '@type': 'Recipe',
-    ...baseFields(content),
-    keywords: buildKeywordsField(content),
-    recipeCategory: content.category,
-    recipeCuisine: content.cuisine ?? 'Internacional',
-    prepTime: minutesToDuration(numberField(data.prepTimeMins ?? data.prep_time_mins)) ?? 'PT20M',
-    cookTime: minutesToDuration(numberField(data.cookTimeMins ?? data.cook_time_mins)),
-    totalTime: minutesToDuration(content.totalTimeMins),
-    recipeYield: data.recipeYield ?? data.recipe_yield ?? data.servings ?? '4 porciones',
-    recipeIngredient: ingredients,
-    recipeInstructions: steps,
-    nutrition,
-    aggregateRating: rating,
-    mainEntityOfPage: contentUrl(content),
+    name: content.title ?? '',
+    description: content.metaDescription ?? content.quickAnswer ?? '',
+    image: [primaryImage, ...images.map((i: any) => i?.url).filter(Boolean)] as string[],
+    keywords,
+    author: {
+      '@type': 'Organization',
+      name: 'WorldWideRecipes',
+    },
+    datePublished: content.publishedAt ?? new Date().toISOString(),
+    recipeIngredient: ingredients
+      .map((ing: any) => `${ing?.amount ?? ''} ${ing?.unit ?? ''} ${ing?.name ?? ''}`.trim())
+      .filter(Boolean),
+    recipeInstructions: steps
+      .map((step: any, i: number) => ({
+        '@type': 'HowToStep',
+        position: i + 1,
+        name: step?.title ?? `Paso ${i + 1}`,
+        text: step?.content ?? step?.text ?? '',
+      }))
+      .filter((s: any) => s.text),
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: String(content.qualityScore ?? 4.5),
+      ratingCount: '1',
+      bestRating: '10',
+      worstRating: '1',
+    },
   });
+
+  return recipeSchema;
 }
 
 export function buildHowToSchema(content: Content): HowToSchema {
