@@ -29,6 +29,56 @@ function arrayField<T = unknown>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+// Builds the image field for Recipe/HowTo/Article schemas.
+// Returns an array of absolute URLs gathered from all available sources,
+// or a single string if only one image exists, or undefined if none found.
+function buildImageField(content: Content): string | string[] | undefined {
+  const seen = new Set<string>();
+  const images: string[] = [];
+
+  const add = (url: unknown) => {
+    if (typeof url === 'string' && url.startsWith('http') && !seen.has(url)) {
+      seen.add(url);
+      images.push(url);
+    }
+  };
+
+  // Priority 1: dedicated imageUrl column
+  add(content.imageUrl);
+
+  // Priority 2: all images stored in body.images (Unsplash images fetched during pipeline)
+  for (const img of arrayField<Record<string, unknown>>(body(content).images)) {
+    add(img.url);
+  }
+
+  // Priority 3: OG image (may be same as imageUrl, deduped via Set)
+  add(content.ogImageUrl);
+
+  if (images.length === 0) return undefined;
+  if (images.length === 1) return images[0];
+  return images;
+}
+
+// Builds the keywords field for Recipe schema.
+// Combines dietTags + category + cuisine; falls back to words from the title
+// so the field is never missing or empty.
+function buildKeywordsField(content: Content): string | undefined {
+  const parts: string[] = [];
+
+  if (content.dietTags?.length) parts.push(...content.dietTags);
+  if (content.category) parts.push(content.category);
+  if (content.cuisine) parts.push(content.cuisine);
+
+  const unique = [...new Set(parts.filter(Boolean))];
+  if (unique.length > 0) return unique.join(', ');
+
+  // Fallback: meaningful words extracted from the title
+  const titleWords = (content.title ?? '')
+    .split(/[\s,\-–]+/)
+    .filter((w) => w.length > 3);
+  return titleWords.join(', ') || undefined;
+}
+
 function textList(value: unknown): string[] {
   return arrayField(value)
     .map((item) => (typeof item === 'string' ? item : textFromObject(item)))
@@ -137,7 +187,7 @@ export function buildRecipeSchema(content: Content): RecipeSchema {
     '@type': 'Recipe',
     name: content.title,
     description: content.metaDescription ?? content.quickAnswer,
-    image: content.imageUrl,
+    image: buildImageField(content),
     author: recipeAuthor(),
     datePublished: content.publishedAt?.toISOString(),
     dateModified: content.updatedAt?.toISOString(),
@@ -149,7 +199,7 @@ export function buildRecipeSchema(content: Content): RecipeSchema {
     recipeCuisine: content.cuisine,
     recipeIngredient: ingredients,
     recipeInstructions: steps,
-    keywords: content.dietTags?.join(', '),
+    keywords: buildKeywordsField(content),
     nutrition: data.nutrition
       ? {
           '@type': 'NutritionInformation',
@@ -175,7 +225,7 @@ export function buildHowToSchema(content: Content): HowToSchema {
     '@type': 'HowTo',
     name: content.title,
     description: content.metaDescription ?? content.quickAnswer,
-    image: content.imageUrl,
+    image: buildImageField(content),
     totalTime: minutesToDuration(content.totalTimeMins),
     supply: textList(data.supply ?? data.ingredients).map((name) => ({ '@type': 'HowToSupply', name })),
     tool: textList(data.tool ?? data.tools ?? data.equipment).map((name) => ({ '@type': 'HowToTool', name })),
@@ -189,7 +239,7 @@ export function buildArticleSchema(content: Content): ArticleSchema {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: content.metaTitle ?? content.title,
-    image: content.ogImageUrl ?? content.imageUrl,
+    image: buildImageField(content),
     author: {
       '@type': 'Person',
       name: content.authorEntity ?? 'WorldWideRecipes Editorial Team',
