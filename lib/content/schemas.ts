@@ -196,7 +196,12 @@ export function buildRecipeSchema(content: Content): RecipeSchema {
       '@type': 'Organization',
       name: 'WorldWideRecipes',
     },
-    datePublished: content.publishedAt ?? new Date().toISOString(),
+    datePublished: content.publishedAt instanceof Date
+      ? content.publishedAt.toISOString()
+      : (typeof content.publishedAt === 'string' ? content.publishedAt : undefined),
+    dateModified: content.updatedAt instanceof Date
+      ? content.updatedAt.toISOString()
+      : (content.publishedAt instanceof Date ? content.publishedAt.toISOString() : undefined),
     recipeIngredient: ingredients
       .map((ing: any) => `${ing?.amount ?? ''} ${ing?.unit ?? ''} ${ing?.name ?? ''}`.trim())
       .filter(Boolean),
