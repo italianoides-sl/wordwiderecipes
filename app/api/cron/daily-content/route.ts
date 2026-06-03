@@ -1,8 +1,15 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 import { generateJSON } from '@/lib/ai/openai';
 import { getContentPlanCategory } from '@/lib/content/content-plan';
+import {
+  clonePublishedContentIndex,
+  getPublishedContentIndex,
+  getRecentPublishedTitles,
+  isDuplicateTopic,
+  rememberTopicInDedupIndex,
+} from '@/lib/content/deduplication';
 import { runContentPipeline } from '@/lib/content/pipeline';
-import { content, db, trendingTopics } from '@/lib/db/schema';
+import { db, trendingTopics } from '@/lib/db/schema';
 import type { ContentType, Locale } from '@/lib/db/schema';
 
 type Trend = {
@@ -32,15 +39,6 @@ type TrendResponse = {
   items?: Trend[];
 };
 
-function normalizeSlug(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 function inferContentCategory(trend: Trend) {
   if (trend.content_category) return trend.content_category;
   if (trend.content_type === 'technique') return 'tecnicas';
@@ -58,44 +56,38 @@ export async function GET(req: Request) {
   const results = { published: 0, failed: 0, skipped: 0, jobs: [] as Array<Record<string, unknown>> };
 
   try {
+    const existingContentIndex = await getPublishedContentIndex({ refresh: true });
+    const recentTitles = getRecentPublishedTitles(existingContentIndex, 200).join('\n');
+
     const recentTopics = await db
       .select({ topic: trendingTopics.topic })
       .from(trendingTopics)
       .orderBy(desc(trendingTopics.detectedAt))
       .limit(100);
 
-    const existingContent = await db
-      .select({
-        slug: content.slug,
-        title: content.title,
-        locale: content.locale,
-      })
-      .from(content)
-      .where(eq(content.status, 'published'))
-      .orderBy(desc(content.publishedAt))
-      .limit(200);
-
     const recentTopicsList = recentTopics
       .map((row) => row.topic)
-      .concat(existingContent.map((row) => row.title))
       .filter(Boolean)
       .slice(0, 100)
-      .join(', ');
+      .join('\n');
 
     const trendsResponse = await generateJSON<Trend[] | TrendResponse>(`
 You are a culinary trend analyst for Spain and Latin America.
 Today: ${new Date().toISOString().split('T')[0]}
 Primary market: Mexico. Secondary: Spain.
 
-Generate 10 food content topics following this distribution:
+NEVER suggest topics similar to these already published:
+${recentTitles || 'No published titles yet.'}
+
+Also avoid repeating these recently detected ideas:
+${recentTopicsList || 'No recent trend ideas yet.'}
+
+Generate 15 completely NEW and UNIQUE food content topics following this distribution:
 5 recipes (diverse world cuisines, no repetition),
 2 techniques (professional cooking methods),
 1 marinade (any protein, any cuisine),
 1 sauce or vinaigrette (unique, not common),
 1 history or culture article about food.
-
-Check these already published topics and avoid them:
-${recentTopicsList || 'No previous topics yet.'}
 
 Focus on: authenticity, cultural depth, unique angles.
 Trending topics in MX and ES preferred.
@@ -118,7 +110,7 @@ Return a JSON object with this exact structure:
     }
   ]
 }
-The trends array must contain exactly 10 items.
+The trends array must contain exactly 15 items.
     `, 3, { maxTokens: 8192 });
 
     const trends = Array.isArray(trendsResponse)
@@ -129,58 +121,27 @@ The trends array must contain exactly 10 items.
       throw new Error('No trends returned from AI');
     }
 
-    const existingTopicsRows = await db
-      .select({
-        topic: trendingTopics.topic,
-        locale: trendingTopics.localePrimary,
-      })
-      .from(trendingTopics)
-      .orderBy(desc(trendingTopics.detectedAt))
-      .limit(50);
+    const dedupedTopics = clonePublishedContentIndex(existingContentIndex);
+    const filtered = trends.filter((trend) => {
+      if (!trend.topic?.trim()) return false;
+      if (trend.difficulty_to_rank === 'high') return false;
 
-    const existingSlugs = new Set(existingContent.map((row) => `${row.locale}:${row.slug}`));
-    const existingTopics = existingTopicsRows
-      .map((row) => ({
-        topic: row.topic?.toLowerCase().trim(),
-        locale: row.locale,
-      }))
-      .filter((row): row is { topic: string; locale: string } => Boolean(row.topic && row.locale));
-
-    function isTooSimilar(topic: string, locale: string): boolean {
-      const normalizedTopic = topic.toLowerCase().trim();
-
-      if (existingTopics.some((existing) => existing.locale === locale && existing.topic === normalizedTopic)) {
-        return true;
+      if (isDuplicateTopic(trend.topic, dedupedTopics)) {
+        console.log(`🚫 Duplicate skipped: "${trend.topic}"`);
+        return false;
       }
 
-      const topicWords = normalizedTopic.split(/\s+/).filter((word) => word.length > 4);
-      if (!topicWords.length) return false;
+      rememberTopicInDedupIndex(dedupedTopics, trend.topic);
+      return true;
+    });
 
-      for (const existing of existingContent) {
-        if (existing.locale !== locale) continue;
-        const title = existing.title?.toLowerCase().trim();
-        if (!title) continue;
-        const matches = topicWords.filter((word) => title.includes(word));
-        if (matches.length >= 3) return true;
-      }
-
-      return false;
-    }
-
-    const uniqueTrends = trends.filter((trend) => !isTooSimilar(trend.topic, trend.locale_primary));
-
-    if (uniqueTrends.length === 0) {
+    if (filtered.length === 0) {
       return Response.json({
         success: true,
         message: 'All trends already published - no new content needed',
         published: 0,
       });
     }
-
-    const filtered = uniqueTrends.filter((trend) => {
-      if (trend.difficulty_to_rank === 'high') return false;
-      return !existingSlugs.has(`${trend.locale_primary}:${normalizeSlug(trend.topic)}`);
-    });
 
     for (const trend of filtered) {
       await db

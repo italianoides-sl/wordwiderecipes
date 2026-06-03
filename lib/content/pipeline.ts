@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   content,
   db,
@@ -13,6 +13,12 @@ import { generateText } from '@/lib/ai/openai';
 import { indexUrlIndexNow } from '@/lib/seo/bing-indexing';
 import { indexUrl } from '@/lib/seo/google-indexing';
 import { updateHomepageConfig } from '@/lib/homepage/config';
+import {
+  getPublishedContentIndex,
+  isDuplicateTopic,
+  normalizeSlugCandidate,
+  rememberPublishedContent,
+} from './deduplication';
 import { buildSchemas } from './schemas';
 import { detectMarketFromLocale, injectAffiliateLinks } from './affiliate-injector';
 import { generateContent } from './generator';
@@ -235,6 +241,7 @@ function sleep(ms: number) {
 export async function runContentPipeline(config: PipelineConfig): Promise<{ success: boolean; contentId?: string; error?: string }> {
   const startedAt = Date.now();
   const job = await createJob(config);
+  const publishedContentIndex = await getPublishedContentIndex();
 
   try {
     let draft: ContentDraft | null = null;
@@ -296,6 +303,20 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       return { success: false, error: 'Content did not pass quality gate' };
     }
 
+    if (
+      isDuplicateTopic(draft.title, publishedContentIndex)
+      || publishedContentIndex.values.has(normalizeSlugCandidate(draft.slug))
+    ) {
+      console.log(`🚫 Duplicate skipped before insert: "${draft.title}"`);
+      await updateJob(job.id, {
+        status: 'failed',
+        error_message: `Duplicate draft detected: ${draft.title}`,
+        completed_at: new Date().toISOString(),
+        generation_ms: Date.now() - startedAt,
+      });
+      return { success: false, error: 'Duplicate draft detected' };
+    }
+
     let images: ContentImage[] = [];
     try {
       const imageQuery = await generateText(
@@ -337,27 +358,9 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       readingTimeMins: Math.ceil(wordCount / 200),
     };
 
-    // Ensure slug uniqueness by appending a small numeric suffix (slug-2, slug-3, ...)
-    let finalSlug = enrichedDraft.slug;
-    let counter = 2;
-    // Check and increment until we find a free slug
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const slugExists = await db
-        .select({ id: content.id })
-        .from(content)
-        .where(eq(content.slug, finalSlug))
-        .limit(1);
-
-      if (!slugExists || slugExists.length === 0) break;
-
-      finalSlug = `${enrichedDraft.slug}-${counter}`;
-      counter += 1;
-    }
-
     const finalDraft: ContentDraft = {
       ...enrichedDraft,
-      slug: finalSlug,
+      slug: normalizeSlugCandidate(enrichedDraft.slug),
     };
 
     const difficultyMap: Record<string, string> = {
@@ -369,6 +372,26 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
 
     const schemas = buildSchemas(draftToContentForSchemas(finalDraft));
     const url = `${getBaseUrl()}/${config.contentType}/${finalDraft.slug}`;
+
+    const existingDuplicate = await db
+      .select({ id: content.id })
+      .from(content)
+      .where(
+        sql`LOWER(${content.title}) = LOWER(${finalDraft.title})
+            OR LOWER(${content.slug}) = LOWER(${finalDraft.slug})`,
+      )
+      .limit(1);
+
+    if (existingDuplicate.length > 0) {
+      console.log(`🚫 DB duplicate caught at insert: "${finalDraft.title}"`);
+      await updateJob(job.id, {
+        status: 'failed',
+        error_message: `DB duplicate caught at insert: ${finalDraft.title}`,
+        completed_at: new Date().toISOString(),
+        generation_ms: Date.now() - startedAt,
+      });
+      return { success: false, error: 'DB duplicate caught at insert' };
+    }
 
     const [inserted] = await db
       .insert(content)
@@ -422,6 +445,11 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
         aiGenerated: true,
       })
       .returning({ id: content.id });
+
+    rememberPublishedContent(publishedContentIndex, {
+      title: finalDraft.title,
+      slug: finalDraft.slug,
+    });
 
     const contentId = inserted.id;
 
