@@ -36,6 +36,22 @@ A step with less than 40 words will cause a validation failure.
 
 `;
 
+const EDITORIAL_QUALITY_RULES = `EDITORIAL QUALITY RULES:
+Write in a warm, personal, conversational tone as if a professional chef is talking directly to the reader.
+Use "tú" form.
+Include personal anecdotes and tips.
+Avoid robotic or list-heavy writing.
+Every article must include:
+- personal tips based on real cooking judgment
+- common mistakes and how to fix or avoid them
+- practical variations or alternatives
+- serving suggestions with context
+- a "Chef's Note" section with professional advice
+- at least 5 real FAQ questions with detailed answers
+FAQ answers must feel genuinely useful, not filler.
+
+`;
+
 function stringField(source: RawDraft, snake: string, camel = snake): string | undefined {
   const value = source[snake] ?? source[camel];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -163,7 +179,7 @@ how to use it correctly, maintenance and care, sharpening/seasoning where releva
 recommended brands at different price points, and safety tips.
 Include: real examples of recipes or tasks it unlocks, affiliate_hint when natural,
 and decision criteria to help readers choose.
-Minimum 800 words. Set category exactly to "herramientas".
+Minimum 1200 words. Set category exactly to "herramientas".
 `;
   }
 
@@ -181,11 +197,11 @@ Set category exactly to "recetas".
   return focus;
 }
 function recipePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `${MANDATORY_STEPS_RULE}Chef writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}${EDITORIAL_QUALITY_RULES}Chef writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: cultural opening 100+ words · ingredients with local names, quality notes, substitutes, affiliate_hint for Amazon items · min 10 steps with WHY and sensory cues · 3 variations · personal_opinion 60-100w first-person chef reflection · citation_summary 100w
+Rules: intro minimum 200 words, conversational and personal · minimum 1500 words total · ingredients with local names, quality notes, substitutes, affiliate_hint for Amazon items · min 10 steps with WHY and sensory cues · chef_note with real chef perspective · 3 variations of the recipe · 3 common mistakes and how to avoid them · storage and reheating advice · serving_suggestions with real pairings · faq with 5+ questions and detailed answers minimum 50 words each · personal_opinion 60-100w first-person chef reflection · citation_summary 100w
 
 Generate 6 FAQ questions following this exact pattern.
 These questions MUST be included for every recipe:
@@ -210,62 +226,62 @@ CRITICAL: Every single step must have:
 
 After generating, verify in your response that NO step has empty text before returning the JSON.
 
-body:{"intro":"","chef_secrets":["","",""],"ingredients":[{"name":"","amount":"","unit":"","note":"","substitute":"","affiliate_hint":""}],"steps":[{"order":1,"title":"","text":"","tip":"","sensory_cue":""}],"variations":[{"name":"","description":""}],"pairing":"","personal_opinion":"A personal reflection of 60-100 words in first person about this dish — a memory, cultural insight, or chef perspective. Must feel genuine and specific, not generic.","chef_note":""}
+body:{"intro":"","chef_secrets":["","",""],"ingredients":[{"name":"","amount":"","unit":"","note":"","substitute":"","affiliate_hint":""}],"steps":[{"order":1,"title":"","text":"","tip":"","sensory_cue":""}],"variations":[{"name":"","description":""}],"common_mistakes":[{"mistake":"","solution":""}],"storage":"","serving_suggestions":"","pairing":"","personal_opinion":"A personal reflection of 60-100 words in first person about this dish — a memory, cultural insight, or chef perspective. Must feel genuine and specific, not generic.","chef_note":""}
 ${base('recipe')}`;
 }
 
 function techniquePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `${MANDATORY_STEPS_RULE}Chef/culinary teacher writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}${EDITORIAL_QUALITY_RULES}Chef/culinary teacher writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: real kitchen context opening 100+ words · explain what/why/when · min 8 steps with WHY, timing, sensory cues, common mistake · equipment with affiliate_hint · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person · tiktok_cta mentions @tuvirtualchef
+Rules: intro minimum 200 words explaining why this technique matters · minimum 1200 words total · explain what/why/when · when_to_use must name specific situations · min 8 steps with WHY, timing, sensory cues, common mistake · common_mistakes with 3 beginner errors · pro_tips with 3 professional tips · equipment with affiliate_hint · faq with 5+ questions and detailed answers · personal_opinion 60-100w first-person · tiktok_cta mentions @tuvirtualchef
 
-body:{"intro":"","what_it_is":"","why_learn":"","equipment":[{"name":"","why":"","affiliate_hint":""}],"before_you_start":"","steps":[{"order":1,"title":"","text":"","common_mistake":""}],"errors":[{"error":"","fix":""}],"practice_exercise":"","advanced_applications":"","personal_opinion":"Personal insight about why this technique matters, when you first learned it, or what mistake changed your understanding. 60-100 words, first person.","tiktok_cta":""}
+body:{"intro":"","what_it_is":"","why_learn":"","when_to_use":"","equipment":[{"name":"","why":"","affiliate_hint":""}],"before_you_start":"","steps":[{"order":1,"title":"","text":"","common_mistake":""}],"common_mistakes":[{"mistake":"","solution":""}],"pro_tips":["","",""],"practice_exercise":"","advanced_applications":"","personal_opinion":"Personal insight about why this technique matters, when you first learned it, or what mistake changed your understanding. 60-100 words, first person.","chef_note":"","tiktok_cta":""}
 ${base('technique')}`;
 }
 
 function ingredientPrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `${MANDATORY_STEPS_RULE}Chef and ingredient buyer writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}${EDITORIAL_QUALITY_RULES}Chef and ingredient buyer writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: market/cultural opening 100+ words · flavor, varieties, buying signs, storage, prep, uses · affiliate_hint for shelf-stable items/tools · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
+Rules: market/cultural opening 100+ words · flavor, varieties, buying signs, storage, prep, uses · affiliate_hint for shelf-stable items/tools · include personal tips, common mistakes, variations, storage tips, serving suggestions, nutritional benefits and chef's note · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
 
-body:{"intro":"","origin_story":"","flavor_profile":"","varieties":[{"name":"","description":""}],"how_to_buy":"","how_to_store":"","how_to_prepare":"","classic_uses":[{"dish":"","why":""}],"surprising_uses":[],"nutrition":"","substitutes":[{"name":"","when":"","ratio":""}],"cultural_significance":"","personal_opinion":"A personal connection to this ingredient — first encounter, a market memory, or culinary revelation. 60-100 words, first person."}
+body:{"intro":"","origin_story":"","flavor_profile":"","varieties":[{"name":"","description":""}],"how_to_buy":"","how_to_store":"","how_to_prepare":"","classic_uses":[{"dish":"","why":""}],"surprising_uses":[],"nutrition":"","nutritional_benefits":"","personal_tips":["","",""],"common_mistakes":[{"mistake":"","fix":""}],"variations":[{"name":"","description":""}],"storage_tips":"","serving_suggestions":"","substitutes":[{"name":"","when":"","ratio":""}],"cultural_significance":"","chef_note":"","personal_opinion":"A personal connection to this ingredient — first encounter, a market memory, or culinary revelation. 60-100 words, first person."}
 ${base('ingredient')}`;
 }
 
 function guidePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `${MANDATORY_STEPS_RULE}Culinary editor writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}${EDITORIAL_QUALITY_RULES}Culinary editor writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: real place/tradition opening 100+ words · decision criteria, recommendations, mistakes, tools with affiliate_hint when natural · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
+Rules: intro minimum 250 words · minimum 1500 words total · include minimum 5 sections with 150+ words each · practical_examples with real examples for each key point · decision criteria, recommendations, mistakes, tools with affiliate_hint when natural · faq with 5+ questions and detailed answers · personal_opinion 60-100w first-person
 
-body:{"intro":"","who_this_is_for":"","cultural_context":"","decision_criteria":[{"criterion":"","why_it_matters":""}],"recommendations":[{"name":"","why":"","affiliate_hint":""}],"mistakes_to_avoid":[{"mistake":"","fix":""}],"step_by_step_plan":[{"order":1,"title":"","text":""}],"personal_opinion":"A personal editorial perspective on this topic — a lesson learned, a cultural observation, or a recommendation from experience. 60-100 words, first person.","final_takeaway":""}
+body:{"intro":"","who_this_is_for":"","cultural_context":"","sections":[{"title":"","content":"","practical_example":""}],"decision_criteria":[{"criterion":"","why_it_matters":""}],"recommendations":[{"name":"","why":"","affiliate_hint":""}],"mistakes_to_avoid":[{"mistake":"","fix":""}],"practical_examples":[{"example":"","why_it_matters":""}],"step_by_step_plan":[{"order":1,"title":"","text":""}],"personal_opinion":"A personal editorial perspective on this topic — a lesson learned, a cultural observation, or a recommendation from experience. 60-100 words, first person.","chef_note":"","final_takeaway":""}
 ${base('guide')}`;
 }
 
 function spicePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `${MANDATORY_STEPS_RULE}Spice specialist writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}${EDITORIAL_QUALITY_RULES}Spice specialist writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: market/aroma opening 100+ words · aroma, heat, grinding, pairings, storage, safety · affiliate_hint for grinder/mortar/jars · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
+Rules: market/aroma opening 100+ words · aroma, heat, grinding, pairings, storage, safety · affiliate_hint for grinder/mortar/jars · include personal tips, common mistakes, variations, storage tips, serving suggestions, nutritional benefits and chef's note · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
 
-body:{"intro":"","origin_story":"","flavor_profile":"","best_pairings":[{"ingredient":"","why":""}],"how_to_toast_or_grind":"","how_to_store":"","classic_uses":[{"dish":"","why":""}],"substitutes":[{"name":"","when":"","ratio":""}],"common_mistakes":[{"mistake":"","fix":""}],"personal_opinion":"Personal insight about this spice — a first encounter, an aroma memory, or a combination that changed your cooking. 60-100 words, first person.","affiliate_tools":[{"name":"","why":"","affiliate_hint":""}]}
+body:{"intro":"","origin_story":"","flavor_profile":"","best_pairings":[{"ingredient":"","why":""}],"how_to_toast_or_grind":"","how_to_store":"","classic_uses":[{"dish":"","why":""}],"variations":[{"name":"","description":""}],"personal_tips":["","",""],"substitutes":[{"name":"","when":"","ratio":""}],"common_mistakes":[{"mistake":"","fix":""}],"storage_tips":"","serving_suggestions":"","nutritional_benefits":"","chef_note":"","personal_opinion":"Personal insight about this spice — a first encounter, an aroma memory, or a combination that changed your cooking. 60-100 words, first person.","affiliate_tools":[{"name":"","why":"","affiliate_hint":""}]}
 ${base('spice')}`;
 }
 
 function cuisinePrompt(topic: string, locale: string, uniqueAngle: string) {
-  return `${MANDATORY_STEPS_RULE}Culinary historian and cook writing for worldwiderecipes.app. Locale: ${locale}.
+  return `${MANDATORY_STEPS_RULE}${EDITORIAL_QUALITY_RULES}Culinary historian and cook writing for worldwiderecipes.app. Locale: ${locale}.
 Topic: ${topic}
 Angle: ${uniqueAngle}
 
-Rules: region/city/migration opening 100+ words · pillars, signature dishes, pantry staples with affiliate_hint, techniques, outsider mistakes · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
+Rules: region/city/migration opening 100+ words · pillars, signature dishes, pantry staples with affiliate_hint, techniques, outsider mistakes · include personal tips, variations, storage tips, serving suggestions, nutritional benefits and chef's note · min 6 FAQ (60-100w) · personal_opinion 60-100w first-person
 
-body:{"intro":"","cultural_context":"","flavor_pillars":[{"pillar":"","examples":""}],"signature_dishes":[{"dish":"","why_it_matters":""}],"pantry_staples":[{"name":"","use":"","affiliate_hint":""}],"essential_techniques":[{"name":"","why":""}],"how_to_start":[{"order":1,"title":"","text":""}],"common_misconceptions":[{"myth":"","reality":""}],"personal_opinion":"A personal perspective on this cuisine — a meal that revealed something, a regional contrast you noticed, or why it deserves more attention. 60-100 words, first person.","cultural_significance":""}
+body:{"intro":"","cultural_context":"","flavor_pillars":[{"pillar":"","examples":""}],"signature_dishes":[{"dish":"","why_it_matters":""}],"pantry_staples":[{"name":"","use":"","affiliate_hint":""}],"essential_techniques":[{"name":"","why":""}],"how_to_start":[{"order":1,"title":"","text":""}],"common_misconceptions":[{"myth":"","reality":""}],"variations":[{"name":"","description":""}],"personal_tips":["","",""],"storage_tips":"","serving_suggestions":"","nutritional_benefits":"","chef_note":"","personal_opinion":"A personal perspective on this cuisine — a meal that revealed something, a regional contrast you noticed, or why it deserves more attention. 60-100 words, first person.","cultural_significance":""}
 ${base('cuisine')}`;
 }
 
@@ -317,6 +333,7 @@ export async function generateContent(input: GenerateContentInput): Promise<Cont
     citationSummary: stringField(raw, 'citation_summary', 'citationSummary'),
     body: {
       ...body,
+      faq: arrayField(raw, 'faq') ?? arrayField(body, 'faq') ?? [],
       personal_opinion: personalOpinion,
       keywords: await generateKeywords(title, contentType, stringField(raw, 'cuisine')).catch(() => []),
     },

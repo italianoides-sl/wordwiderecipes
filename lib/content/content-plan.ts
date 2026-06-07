@@ -16,6 +16,14 @@ export type ContentPlanCategory = {
   prompt_focus: string;
 };
 
+export type HighPriorityGuideTopic = {
+  topic: string;
+  contentType: 'guide';
+  locale: 'es';
+  unique_angle: string;
+  target_words: number;
+};
+
 export const CONTENT_PLAN: ContentPlanCategory[] = [
   {
     category: 'marinadas',
@@ -162,6 +170,114 @@ export const CONTENT_PLAN: ContentPlanCategory[] = [
       vanilla, paprika types, sumac, za'atar, caraway,
       fenugreek, mustard seeds, cardamom varieties,
       dried chiles as spices, annatto, epazote...`,
+  },
+];
+
+export const HIGH_PRIORITY_KITCHEN_THEORY_GUIDES: HighPriorityGuideTopic[] = [
+  {
+    topic: 'Qué es la mise en place y por qué lo cambia todo en cocina',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Chef profesional explica por qué la mise en place es la diferencia entre un cocinero amateur y uno profesional',
+    target_words: 2000,
+  },
+  {
+    topic: 'Cómo comportarse en una cocina profesional: reglas no escritas',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Las reglas de comportamiento que nadie te enseña en la escuela de cocina pero que determinan tu carrera',
+    target_words: 2000,
+  },
+  {
+    topic: 'Orden y limpieza en cocina profesional: HACCP explicado',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Por qué el orden y la limpieza no son opcionales en cocina y cómo implementar HACCP sin morir en el intento',
+    target_words: 2000,
+  },
+  {
+    topic: 'La prep list diaria: cómo organizarla para no volverse loco',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'El sistema real que usan los chefs profesionales para organizar su día antes del servicio',
+    target_words: 2000,
+  },
+  {
+    topic: 'El checklist de apertura y cierre de cocina profesional',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Los checklists exactos que se usan en cocinas de restaurantes reales para no olvidar nada',
+    target_words: 2000,
+  },
+  {
+    topic: 'Cómo no tomarse nada personal en la cocina profesional',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'La mentalidad que separa a los cocineros que aguantan de los que se van al mes',
+    target_words: 2000,
+  },
+  {
+    topic: 'Comunicación en brigada de cocina: el lenguaje del servicio',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Por qué se grita OUI CHEF y todo lo que necesitas saber sobre comunicación en cocina',
+    target_words: 2000,
+  },
+  {
+    topic: 'Gestión del estrés durante el servicio en cocina',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Técnicas reales que usan los chefs para mantener la cabeza fría cuando todo va mal en el pase',
+    target_words: 2000,
+  },
+  {
+    topic: 'Cómo leer una receta como un chef profesional',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Lo que un chef ve en una receta que un cocinero amateur no ve — y cómo entrenar esa mirada',
+    target_words: 2000,
+  },
+  {
+    topic: 'Temperaturas de seguridad alimentaria que todo cocinero debe memorizar',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Las temperaturas críticas que marcan la diferencia entre cocina segura y un problema de salud pública',
+    target_words: 2000,
+  },
+  {
+    topic: 'Cómo organizar tu nevera como un chef profesional',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'El sistema FIFO y la organización de frío que usan los restaurantes aplicada a la cocina de casa',
+    target_words: 2000,
+  },
+  {
+    topic: 'El cuchillo de cocina: herramienta, extensión y responsabilidad del chef',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Por qué el cuchillo es la extensión del chef y cómo elegir, cuidar y usar el tuyo correctamente',
+    target_words: 2000,
+  },
+  {
+    topic: 'Cómo calcular raciones y escandallos en cocina profesional',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'El escandallo explicado de forma simple para cocineros que quieren entender los números de su cocina',
+    target_words: 2000,
+  },
+  {
+    topic: 'El servicio en cocina: ritmo, timing y comunicación con sala',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'Cómo funciona el servicio desde dentro — lo que nunca ves cuando comes en un restaurante',
+    target_words: 2000,
+  },
+  {
+    topic: 'Brigada de cocina: jerarquía, roles y responsabilidades',
+    contentType: 'guide',
+    locale: 'es',
+    unique_angle: 'De commis a chef ejecutivo — todos los roles de la brigada clásica y moderna explicados',
+    target_words: 2000,
   },
 ];
 

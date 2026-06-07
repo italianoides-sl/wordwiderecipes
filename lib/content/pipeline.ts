@@ -34,6 +34,7 @@ type PipelineConfig = {
   promptVersion?: string;
   contentCategory?: string;
   promptFocus?: string;
+  minQualityScore?: number;
 };
 
 function getBaseUrl() {
@@ -277,10 +278,11 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
         continue;
       }
 
+      const minimumQuality = config.minQualityScore ?? 5.0;
       quality = await validateContent(draft, attempts);
       await updateJob(job.id, { quality_score: quality.average, attempts });
 
-      if (quality.publish) break;
+      if (quality.publish && quality.average >= minimumQuality) break;
 
       console.log(`Attempt ${attempts} quality ${quality.average}/10 - retrying`);
       console.log('Issues:', quality.hard_fails, quality.improvements);
@@ -288,12 +290,12 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       if (attempts >= 2) {
         await updateJob(job.id, {
           status: 'failed',
-          error_message: `Quality too low after ${attempts} attempts: ${quality.average}/10`,
+          error_message: `Quality too low after ${attempts} attempts: ${quality.average}/10 (min ${minimumQuality})`,
           error_details: { quality },
           completed_at: new Date().toISOString(),
           generation_ms: Date.now() - startedAt,
         });
-        return { success: false, error: `Quality score ${quality.average} below threshold` };
+        return { success: false, error: `Quality score ${quality.average} below threshold ${minimumQuality}` };
       }
 
       await sleep(1500);
@@ -541,3 +543,5 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
     return { success: false, error: String(err) };
   }
 }
+
+export const generateAndPublishArticle = runContentPipeline;

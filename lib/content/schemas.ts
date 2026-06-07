@@ -36,6 +36,24 @@ function arrayField<T = unknown>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function faqItems(content: Content): Array<{ question: string; answer: string }> {
+  const bodyFaq = arrayField<Record<string, unknown>>(body(content).faq)
+    .map((item) => ({
+      question: textFromObject(item.question).trim(),
+      answer: textFromObject(item.answer).trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+
+  if (bodyFaq.length) return bodyFaq;
+
+  return arrayField<Record<string, unknown>>(content.faq)
+    .map((item) => ({
+      question: textFromObject(item.question).trim(),
+      answer: textFromObject(item.answer).trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
 function textFromObject(value: unknown): string {
   if (!value) return '';
   if (typeof value === 'string') return value;
@@ -276,11 +294,14 @@ export function buildArticleSchema(content: Content): ArticleSchema {
   });
 }
 
-export function buildFAQSchema(content: Content): FAQPageSchema {
+export function buildFAQSchema(content: Content): FAQPageSchema | null {
+  const items = faqItems(content);
+  if (!items.length) return null;
+
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: (content.faq ?? []).map((item) => ({
+    mainEntity: items.map((item) => ({
       '@type': 'Question',
       name: item.question,
       acceptedAnswer: { '@type': 'Answer', text: item.answer },

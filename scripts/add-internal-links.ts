@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+import { resolve } from 'path';
+config({ path: resolve(process.cwd(), '.env.local') });
 
 async function main() {
   const { sql } = await import('drizzle-orm');

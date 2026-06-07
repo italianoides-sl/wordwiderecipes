@@ -21,6 +21,25 @@ function array<T = Record<string, unknown>>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function faqItems(content: Content) {
+  const body = (content.body ?? {}) as Record<string, unknown>;
+  const bodyFaq = array<Record<string, unknown>>(body.faq)
+    .map((item) => ({
+      question: text(item.question).trim(),
+      answer: text(item.answer).trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+
+  if (bodyFaq.length) return bodyFaq;
+
+  return (content.faq ?? [])
+    .map((item) => ({
+      question: text(item.question).trim(),
+      answer: text(item.answer).trim(),
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
 function imageAttribution(content: Content) {
   if (!content.imageAttribution) return null;
   const image = array<Record<string, unknown>>((content.body as Record<string, unknown> | undefined)?.images)[0];
@@ -57,13 +76,14 @@ export default function ContentDetail({ content, related }: { content: Content; 
   const typeHref = `/recipes/tipo/${typeFilter}`;
   const cuisineHref = countrySlug ? `/recipes/pais/${countrySlug}` : null;
   const schemas = buildSchemas(content);
+  const faq = faqItems(content);
 
   return (
     <main className="rp-shell">
       <JsonLd id={`schema-article-${content.id}`} data={schemas.article} />
       <JsonLd id={`schema-recipe-${content.id}`} data={schemas.recipe} />
-      <JsonLd id={`schema-howto-${content.id}`} data={schemas.howto} />
       <JsonLd id={`schema-faq-${content.id}`} data={schemas.faq} />
+      <JsonLd id={`schema-howto-${content.id}`} data={schemas.howto} />
       <JsonLd id={`schema-breadcrumb-${content.id}`} data={schemas.breadcrumb} />
 
       <div className="rp-layout wwr-article-layout">
@@ -130,11 +150,11 @@ export default function ContentDetail({ content, related }: { content: Content; 
             </section>
           ) : null}
 
-          {content.faq?.length ? (
+          {faq.length ? (
             <section className="body-section rp-faq" id="sec-faq">
               <h2>Preguntas frecuentes</h2>
               <div className="faq-accordion">
-                {content.faq.map((item) => (
+                {faq.map((item) => (
                   <details key={item.question}>
                     <summary>{item.question}</summary>
                     <p>{item.answer}</p>

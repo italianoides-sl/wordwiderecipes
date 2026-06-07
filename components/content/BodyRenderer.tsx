@@ -98,6 +98,34 @@ function GenericField({ name, value }: { name: string; value: unknown }) {
   }
 
   if (Array.isArray(value)) {
+    const objectItems = value.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) as Array<Record<string, unknown>>;
+    if (objectItems.length === value.length) {
+      return (
+        <section className="body-section">
+          <h2>{titleFromKey(name)}</h2>
+          <div className="body-card-grid">
+            {objectItems.map((item, index) => {
+              const heading = text(
+                item.title ?? item.name ?? item.mistake ?? item.error ?? item.example ?? item.dish ?? item.criterion ?? item.pillar,
+              );
+              const description = Object.entries(item)
+                .filter(([key]) => !['title', 'name', 'mistake', 'error', 'example', 'dish', 'criterion', 'pillar'].includes(key))
+                .map(([, entry]) => text(entry))
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <div className="body-card" key={`${name}-${index}`}>
+                  {heading ? <h3>{heading}</h3> : null}
+                  <p>{description || text(item)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="body-section">
         <h2>{titleFromKey(name)}</h2>
@@ -120,12 +148,79 @@ function GenericField({ name, value }: { name: string; value: unknown }) {
   );
 }
 
+function EditorialPanel({ className, title, value }: { className: string; title: string; value: unknown }) {
+  if (!value) return null;
+
+  if (typeof value === 'string') {
+    return (
+      <section className={className}>
+        <h3>{title}</h3>
+        <p>{value}</p>
+      </section>
+    );
+  }
+
+  if (Array.isArray(value)) {
+    const strings = value.filter((item) => typeof item === 'string').map((item) => text(item)).filter(Boolean);
+    const objects = value.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) as Array<Record<string, unknown>>;
+
+    return (
+      <section className={className}>
+        <h3>{title}</h3>
+        {strings.length ? (
+          <ul>
+            {strings.map((item, index) => <li key={`${className}-${index}`}>{item}</li>)}
+          </ul>
+        ) : null}
+        {objects.length ? (
+          <div className="body-card-grid">
+            {objects.map((item, index) => {
+              const heading = text(item.title ?? item.name ?? item.mistake ?? item.error ?? item.example);
+              const description = Object.entries(item)
+                .filter(([key]) => !['title', 'name', 'mistake', 'error', 'example'].includes(key))
+                .map(([, entry]) => text(entry))
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <div className="body-card" key={`${className}-card-${index}`}>
+                  {heading ? <h4>{heading}</h4> : null}
+                  <p>{description || text(item)}</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
+  return (
+    <section className={className}>
+      <h3>{title}</h3>
+      <p>{text(value)}</p>
+    </section>
+  );
+}
+
+function EditorialSections({ body }: { body: Record<string, unknown> }) {
+  return (
+    <>
+      <EditorialPanel className="chef-note" title="👨‍🍳 Nota del chef" value={body.chef_note} />
+      <EditorialPanel className="common-mistakes" title="⚠️ Errores comunes" value={body.common_mistakes} />
+      <EditorialPanel className="variations" title="🔄 Variaciones" value={body.variations} />
+      <EditorialPanel className="storage-tips" title="🧊 Conservación" value={body.storage ?? body.storage_tips} />
+      <EditorialPanel className="serving-suggestions" title="🍽️ Cómo servirlo" value={body.serving_suggestions} />
+      <EditorialPanel className="pro-tips" title="🔥 Consejos profesionales" value={body.pro_tips ?? body.personal_tips} />
+    </>
+  );
+}
+
 function RecipeBody({ content }: { content: Content }) {
   const body = content.body ?? {};
   const links = content.affiliateLinks ?? [];
   const ingredients = array<Record<string, unknown>>(body.ingredients);
   const steps = validSteps(body.steps);
-  const variations = array<Record<string, unknown>>(body.variations);
 
   return (
     <div className="body-renderer">
@@ -189,14 +284,8 @@ function RecipeBody({ content }: { content: Content }) {
         </section>
       ) : null}
       <BodyImageSlot content={content} index={2} />
-      {variations.length ? <GenericField name="variations" value={variations} /> : null}
+      <EditorialSections body={body} />
       {body.pairing ? <GenericField name="pairing" value={body.pairing} /> : null}
-      {body.chef_note ? (
-        <section className="chef-note">
-          <h2>Nota del chef</h2>
-          <p>{text(body.chef_note)}</p>
-        </section>
-      ) : null}
     </div>
   );
 }
@@ -210,8 +299,10 @@ function TechniqueBody({ content }: { content: Content }) {
 
   return (
     <div className="body-renderer">
+      {body.intro ? <GenericField name="intro" value={body.intro} /> : null}
       {body.what_it_is ? <GenericField name="what_it_is" value={body.what_it_is} /> : null}
       {body.why_learn ? <GenericField name="why_learn" value={body.why_learn} /> : null}
+      {body.when_to_use ? <GenericField name="when_to_use" value={body.when_to_use} /> : null}
       {equipment.length ? (
         <section className="body-section">
           <h2>Equipo</h2>
@@ -260,6 +351,7 @@ function TechniqueBody({ content }: { content: Content }) {
       <BodyImageSlot content={content} index={2} />
       {body.practice_exercise ? <GenericField name="practice_exercise" value={body.practice_exercise} /> : null}
       {body.advanced_applications ? <GenericField name="advanced_applications" value={body.advanced_applications} /> : null}
+      <EditorialSections body={body} />
     </div>
   );
 }
@@ -270,6 +362,7 @@ function IngredientBody({ content }: { content: Content }) {
 
   return (
     <div className="body-renderer">
+      {body.intro ? <GenericField name="intro" value={body.intro} /> : null}
       {ordered.map((key) => {
         if (key === 'substitutes' && array(body[key]).length) {
           return (
@@ -302,13 +395,15 @@ function IngredientBody({ content }: { content: Content }) {
         }
         return <GenericField key={key} name={key} value={body[key]} />;
       })}
+      <EditorialSections body={body} />
     </div>
   );
 }
 
 function GenericBody({ content }: { content: Content }) {
   const body = content.body ?? {};
-  const entries = Object.entries(body).filter(([key, value]) => key !== 'images' && Boolean(value));
+  const hiddenKeys = new Set(['images', 'faq', 'chef_note', 'common_mistakes', 'variations', 'storage', 'storage_tips', 'serving_suggestions', 'pro_tips', 'personal_tips']);
+  const entries = Object.entries(body).filter(([key, value]) => !hiddenKeys.has(key) && Boolean(value));
 
   return (
     <div className="body-renderer">
@@ -319,6 +414,7 @@ function GenericBody({ content }: { content: Content }) {
           {index === 2 ? <BodyImageSlot content={content} index={2} /> : null}
         </Fragment>
       ))}
+      <EditorialSections body={body} />
     </div>
   );
 }

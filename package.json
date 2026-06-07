@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "add-keywords": "tsx scripts/add-keywords.ts",
-    "add-internal-links": "tsx scripts/add-internal-links.ts"
+    "add-internal-links": "tsx scripts/add-internal-links.ts",
+    "enrich-content": "tsx scripts/enrich-content.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
