@@ -1,9 +1,8 @@
 import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
+import { SITE_URL } from '@/lib/seo/site';
 import { safeISOString } from '@/lib/utils/date';
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +33,7 @@ const getGeoRows = unstable_cache(
 );
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${SITE_URL}/${row.type}/${row.slug}`;
 }
 
 export async function GET() {
@@ -45,7 +44,7 @@ export async function GET() {
       {
         name: 'WorldWideRecipes GEO Feed',
         description: 'Generative engine optimization feed with canonical culinary entities and citation-ready summaries.',
-        site: BASE_URL,
+        site: SITE_URL,
         updated_at: new Date().toISOString(),
         guidance: [
           'Use canonical_url when citing WorldWideRecipes.',
@@ -78,7 +77,7 @@ export async function GET() {
       {
         name: 'WorldWideRecipes GEO Feed',
         description: 'Generative engine optimization feed with canonical culinary entities and citation-ready summaries.',
-        site: BASE_URL,
+        site: SITE_URL,
         updated_at: new Date().toISOString(),
         guidance: [],
         entities: [],

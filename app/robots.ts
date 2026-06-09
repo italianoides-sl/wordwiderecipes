@@ -1,8 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/seo/site';
 
 export default function robots(): MetadataRoute.Robots {
-  const host = 'https://www.worldwiderecipes.app';
-
   return {
     rules: [
       {
@@ -22,7 +21,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/api/',
       },
     ],
-    sitemap: `${host}/sitemap.xml`,
-    host,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

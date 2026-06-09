@@ -67,22 +67,10 @@ function BodyImageSlot({ content, index }: { content: Content; index: number }) 
 function InlineContentImage({ image, title }: { image?: Record<string, unknown>; title: string }) {
   const url = text(image?.url);
   if (!url) return null;
-  const photographerName = text(image?.photographerName);
-  const photographerUrl = text(image?.photographerUrl);
 
   return (
     <figure className="body-inline-image">
       <img src={url} alt={text(image?.alt) || title} loading="lazy" />
-      <figcaption>
-        {photographerName && photographerUrl ? (
-          <>
-            Photo by <a href={photographerUrl} target="_blank" rel="noopener noreferrer">{photographerName}</a>{' '}
-            on <a href="https://unsplash.com/?utm_source=worldwiderecipes&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a>
-          </>
-        ) : (
-          text(image?.attribution) || 'Photo from Unsplash'
-        )}
-      </figcaption>
     </figure>
   );
 }

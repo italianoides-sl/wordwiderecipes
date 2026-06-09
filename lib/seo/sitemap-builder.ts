@@ -1,11 +1,9 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
+import { SITE_URL } from '@/lib/seo/site';
 
-const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
-  'https://worldwiderecipes.app',
-  'https://www.worldwiderecipes.app',
-);
+const MAIN_SITEMAP_PAGE_SIZE = 200;
 
 export const SITEMAP_FILES = [
   'sitemap-recipes-es.xml',
@@ -26,24 +24,15 @@ function escapeXml(value: string) {
 }
 
 function contentUrl(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${SITE_URL}/${row.type}/${row.slug}`;
 }
 
-function priorityFor(type: string) {
-  if (type === 'cuisine') return '0.9';
-  if (type === 'recipe' || type === 'technique') return '0.8';
-  if (type === 'ingredient' || type === 'spice') return '0.7';
-  return '0.7';
-}
-
-function urlEntry(url: string, lastmod: Date | string | null | undefined, priority: string, changefreq: string) {
+function urlEntry(url: string, lastmod: Date | string | null | undefined) {
   const modified = lastmod ? new Date(lastmod).toISOString() : new Date().toISOString();
   return [
     '  <url>',
     `    <loc>${escapeXml(url)}</loc>`,
     `    <lastmod>${modified}</lastmod>`,
-    `    <changefreq>${changefreq}</changefreq>`,
-    `    <priority>${priority}</priority>`,
     '  </url>',
   ].join('\n');
 }
@@ -126,7 +115,7 @@ export async function buildSitemapIndex(): Promise<string> {
   const now = new Date().toISOString();
   const entries = SITEMAP_FILES.map((file) => [
     '  <sitemap>',
-    `    <loc>${escapeXml(`${BASE_URL}/${file}`)}</loc>`,
+    `    <loc>${escapeXml(`${SITE_URL}/${file}`)}</loc>`,
     `    <lastmod>${now}</lastmod>`,
     '  </sitemap>',
   ].join('\n'));
@@ -141,28 +130,52 @@ export async function buildSitemapIndex(): Promise<string> {
 
 export async function buildMainSitemap(): Promise<string> {
   const rows = await getMainSitemapRows();
+  const entries = mainSitemapEntries(rows);
+  const pageCount = Math.max(1, Math.ceil(entries.length / MAIN_SITEMAP_PAGE_SIZE));
+  const now = new Date().toISOString();
 
-  if (!rows.length) {
-    return sitemapXml([
-      urlEntry(`${BASE_URL}/`, new Date(), '1.0', 'daily'),
-    ]);
-  }
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...Array.from({ length: pageCount }, (_, index) => [
+      '  <sitemap>',
+      `    <loc>${escapeXml(`${SITE_URL}/sitemap-${index}.xml`)}</loc>`,
+      `    <lastmod>${now}</lastmod>`,
+      '  </sitemap>',
+    ].join('\n')),
+    '</sitemapindex>',
+  ].join('\n');
+}
 
+export async function buildMainSitemapPage(index: number): Promise<string> {
+  const rows = await getMainSitemapRows();
+  const entries = mainSitemapEntries(rows);
+  const start = Math.max(index, 0) * MAIN_SITEMAP_PAGE_SIZE;
+  const pageEntries = entries.slice(start, start + MAIN_SITEMAP_PAGE_SIZE);
+
+  return sitemapXml(
+    pageEntries.length
+      ? pageEntries
+      : [urlEntry(`${SITE_URL}/`, new Date())],
+  );
+}
+
+function mainSitemapEntries(rows: Awaited<ReturnType<typeof getMainSitemapRows>>) {
   const staticUrls = [
-    `${BASE_URL}/`,
-    `${BASE_URL}/recipes`,
-    `${BASE_URL}/about`,
-    `${BASE_URL}/contact`,
-    `${BASE_URL}/privacy-policy`,
-    `${BASE_URL}/terms`,
+    `${SITE_URL}/`,
+    `${SITE_URL}/recipes`,
+    `${SITE_URL}/about`,
+    `${SITE_URL}/contact`,
+    `${SITE_URL}/privacy-policy`,
+    `${SITE_URL}/terms`,
   ];
 
   const entries = [
-    ...staticUrls.map((url) => urlEntry(url, new Date(), url.endsWith('/recipes') ? '0.8' : '0.6', 'weekly')),
-    ...rows.map((row) => urlEntry(contentUrl(row), row.updatedAt, priorityFor(row.type), 'weekly')),
+    ...staticUrls.map((url) => urlEntry(url, new Date())),
+    ...rows.map((row) => urlEntry(contentUrl(row), row.updatedAt)),
   ];
 
-  return sitemapXml(entries);
+  return entries;
 }
 
 export async function buildSitemap(options: {
@@ -177,19 +190,19 @@ export async function buildSitemap(options: {
   const locale = options.locale ?? inferred.locale;
   const rows = await getSitemapRows(type, locale);
 
-  const entries = rows.map((row) => urlEntry(contentUrl(row), row.updatedAt, priorityFor(row.type), 'weekly'));
+  const entries = rows.map((row) => urlEntry(contentUrl(row), row.updatedAt));
   return sitemapXml(entries);
 }
 
 async function buildFilterPagesSitemap() {
   const rows = await getFilterPagesRows();
 
-  const urls = new Set<string>([`${BASE_URL}/`]);
+  const urls = new Set<string>([`${SITE_URL}/`]);
   for (const row of rows) {
-    urls.add(`${BASE_URL}/recipes/tipo/${row.type}`);
-    if (row.cuisine) urls.add(`${BASE_URL}/recipes/pais/${encodeURIComponent(row.cuisine)}`);
-    if (row.difficulty) urls.add(`${BASE_URL}/recipes/dificultad/${row.difficulty}`);
+    urls.add(`${SITE_URL}/recipes/tipo/${row.type}`);
+    if (row.cuisine) urls.add(`${SITE_URL}/recipes/pais/${encodeURIComponent(row.cuisine)}`);
+    if (row.difficulty) urls.add(`${SITE_URL}/recipes/dificultad/${row.difficulty}`);
   }
 
-  return sitemapXml([...urls].map((url) => urlEntry(url, new Date(), url === `${BASE_URL}/` ? '1.0' : '0.6', url === `${BASE_URL}/` ? 'daily' : 'monthly')));
+  return sitemapXml([...urls].map((url) => urlEntry(url, new Date())));
 }

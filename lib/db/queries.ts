@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, ne, or, sql, type SQL } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { cuisineCountries } from '@/lib/cuisine/atlas';
 import type { FilterParams } from '@/lib/content/routes';
@@ -152,32 +152,26 @@ export async function getRelatedContent(slug: string, locale: Locale, limit = 6)
 
 const getRelatedContentForContentCached = cachedDbQuery(
   'related-content-for-content',
-  async (id: string, type: ContentType, relatedSlugs: string[] | null | undefined, limit: number) => {
-  if (relatedSlugs?.length) {
-    const related = await db
+  async (id: string, type: ContentType, cuisine: string | null, limit: number) => {
+    const conditions: SQL[] = [
+      publishedOnly(),
+      ne(content.id, id),
+      cuisine
+        ? or(eq(content.type, type), eq(content.cuisine, cuisine))!
+        : eq(content.type, type),
+    ];
+
+    return db
       .select()
       .from(content)
-      .where(
-        and(
-          publishedOnly(),
-          sql`${content.slug} = ANY(${relatedSlugs})`,
-        ),
-      )
+      .where(and(...conditions))
+      .orderBy(sql`RANDOM()`)
       .limit(limit);
-    if (related.length) return related;
-  }
-
-  return db
-    .select()
-    .from(content)
-    .where(and(publishedOnly(), eq(content.type, type), sql`${content.id} <> ${id}`))
-    .orderBy(desc(content.publishedAt))
-    .limit(limit);
   },
 );
 
-export async function getRelatedContentForContent(row: Content, limit = 4) {
-  return getRelatedContentForContentCached(row.id, row.type as ContentType, row.relatedSlugs, limit);
+export async function getRelatedContentForContent(row: Content, limit = 2) {
+  return getRelatedContentForContentCached(row.id, row.type as ContentType, row.cuisine ?? null, limit);
 }
 
 const getHomepageConfigCached = cachedDbQuery('homepage-config', async () => {

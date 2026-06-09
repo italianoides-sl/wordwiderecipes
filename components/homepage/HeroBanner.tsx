@@ -4,19 +4,20 @@ import { contentHref } from '@/lib/content/routes';
 import type { Content, Locale } from '@/lib/db/schema';
 
 function dayLabel() {
-  return new Intl.DateTimeFormat('es-ES', { weekday: 'long' }).format(new Date());
+  const day = new Intl.DateTimeFormat('es-ES', { weekday: 'long' }).format(new Date());
+  return day.charAt(0).toUpperCase() + day.slice(1);
 }
 
 async function loadFeatured(locale: string) {
   return withDbFallback(getHomepageFeaturedContent(locale as Locale, 3), [] as Content[], 'Homepage featured content');
 }
 
-function CuisineBadge({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
-  return (
-    <span className="wwr-cuisine-badge" style={{ padding: size === 'sm' ? '5px 9px' : '6px 11px', fontSize: size === 'sm' ? '10px' : '11px' }}>
-      <span className="wwr-cb-name">{name}</span>
-    </span>
-  );
+function placeholderClass(index: number) {
+  return index === 0 ? 'ph-ramen' : index === 1 ? 'ph-paella' : 'ph-tacos';
+}
+
+function placeholderIcon(index: number) {
+  return index === 0 ? '🍜' : index === 1 ? '🥘' : '🌮';
 }
 
 export default async function HeroBanner({ locale = 'es' }: { locale?: string }) {
@@ -26,17 +27,18 @@ export default async function HeroBanner({ locale = 'es' }: { locale?: string })
 
   if (!primary) {
     return (
-      <section className="wwr-hero">
-        <div className="wwr-section-head">
-          <div className="wwr-section-eyebrow">
-            <span className="wwr-eyebrow-line" aria-hidden="true" />
-            <span>Edicion diaria · {day}</span>
-          </div>
-          <div className="wwr-section-titles">
-            <h1 className="wwr-section-title">
-              Lo que se cocina <em>hoy.</em>
+      <section className="hero">
+        <div className="hero-inner">
+          <div className="hero-left">
+            <div className="hero-eyebrow">
+              <span className="hero-eyebrow-dot" />
+              Edición diaria · {day}
+            </div>
+            <h1 className="hero-headline">
+              Lo que se cocina
+              <em> hoy.</em>
             </h1>
-            <p className="wwr-section-sub">Los articulos destacados apareceran aqui cuando haya contenido publicado.</p>
+            <p className="hero-sub">Los artículos destacados aparecerán aquí cuando haya contenido publicado.</p>
           </div>
         </div>
       </section>
@@ -44,67 +46,67 @@ export default async function HeroBanner({ locale = 'es' }: { locale?: string })
   }
 
   return (
-    <section className="wwr-hero">
-      <div className="wwr-section-head">
-        <div className="wwr-section-eyebrow">
-          <span className="wwr-eyebrow-line" aria-hidden="true" />
-          <span>Edicion diaria · {day}</span>
-        </div>
-        <div className="wwr-section-titles">
-          <h1 className="wwr-section-title">
-            Lo que se cocina <em>hoy.</em>
-          </h1>
-          <p className="wwr-section-sub">Articulos publicados en la web, rotados cada dia para mezclar temporada, tecnica y cocina del mundo.</p>
-        </div>
-      </div>
+    <section className="hero">
+      <div className="hero-inner">
+        <div className="hero-left">
+          <div className="hero-eyebrow">
+            <span className="hero-eyebrow-dot" />
+            Edición diaria · {day}
+          </div>
 
-      <div className="wwr-hero-grid">
-        <article className="wwr-card wwr-card--featured" data-cuisine={primary.cuisine ?? ''}>
-          <a className="wwr-card-link" href={contentHref(primary)}>
-            <div className="wwr-card-media">
-              {primary.imageUrl ? <img className="wwr-card-img wwr-parallax-img" src={primary.imageUrl} alt={primary.imageAlt ?? primary.title} /> : <div className="image-skeleton" />}
-              <div className="wwr-card-overlay" />
-              <div className="wwr-card-top">
-                {primary.cuisine ? <CuisineBadge name={primary.cuisine} /> : null}
-                <span className="wwr-kicker">Destacado de hoy · {day}</span>
-              </div>
-              <div className="wwr-card-body wwr-card-body--featured">
-                <div className="wwr-meta">
-                  {primary.readingTimeMins ? <span>{primary.readingTimeMins} min lectura</span> : null}
-                  <span>{primary.type}</span>
-                </div>
-                <h2 className="wwr-card-title wwr-card-title--featured">{primary.title}</h2>
-                <p className="wwr-card-excerpt">{primary.metaDescription ?? primary.quickAnswer}</p>
-                <div className="wwr-card-footer">
-                  <span className="wwr-cta">Leer articulo <span className="wwr-cta-arrow">→</span></span>
-                  <span className="wwr-author">por {primary.authorEntity ?? 'WorldWideRecipes'}</span>
-                </div>
-              </div>
+          <h1 className="hero-headline">
+            Lo que se cocina
+            <em> hoy.</em>
+          </h1>
+
+          <p className="hero-sub">
+            Artículos publicados cada día para mezclar temporada, técnica y cocina del mundo.
+          </p>
+
+          <div className="hero-stats">
+            <div>
+              <div className="hero-stat-num">{featured.length}</div>
+              <div className="hero-stat-label">Destacados</div>
+            </div>
+            <div>
+              <div className="hero-stat-num">3</div>
+              <div className="hero-stat-label">Tipos</div>
+            </div>
+            <div>
+              <div className="hero-stat-num">24/7</div>
+              <div className="hero-stat-label">Publicación</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-right">
+          <a href={contentHref(primary)} className="hero-card hero-card--main">
+            {primary.imageUrl ? (
+              <img className="hero-card-img" src={primary.imageUrl} alt={primary.imageAlt ?? primary.title} />
+            ) : (
+              <div className={`ph ${placeholderClass(0)}`} style={{ minHeight: 460 }}>{placeholderIcon(0)}</div>
+            )}
+            <div className="hero-card-overlay" />
+            <div className="hero-card-body">
+              {primary.cuisine ? <div className="hero-card-badge">{primary.cuisine}</div> : null}
+              <h2 className="hero-card-title">{primary.title}</h2>
+              <div className="hero-card-meta">Destacado de hoy · {primary.readingTimeMins ?? 12} min lectura</div>
             </div>
           </a>
-        </article>
 
-        <div className="wwr-hero-stack">
-          {secondary.slice(0, 2).map((item) => (
-            <article className="wwr-card wwr-card--secondary" data-cuisine={item.cuisine ?? ''} key={item.id}>
-              <a className="wwr-card-link" href={contentHref(item)}>
-                <div className="wwr-card-media">
-                  {item.imageUrl ? <img className="wwr-card-img wwr-parallax-img" src={item.imageUrl} alt={item.imageAlt ?? item.title} /> : <div className="image-skeleton" />}
-                  <div className="wwr-card-overlay" />
-                  <div className="wwr-card-top">
-                    {item.cuisine ? <CuisineBadge name={item.cuisine} size="sm" /> : null}
-                  </div>
-                  <div className="wwr-card-body wwr-card-body--secondary">
-                    <div className="wwr-meta">
-                      {item.readingTimeMins ? <span>{item.readingTimeMins} min lectura</span> : null}
-                      <span>{item.type}</span>
-                    </div>
-                    <h3 className="wwr-card-title wwr-card-title--secondary">{item.title}</h3>
-                    <span className="wwr-cta wwr-cta--sm">Leer <span className="wwr-cta-arrow">→</span></span>
-                  </div>
-                </div>
-              </a>
-            </article>
+          {secondary.slice(0, 2).map((item, index) => (
+            <a href={contentHref(item)} className="hero-card hero-card--sm" key={item.id}>
+              {item.imageUrl ? (
+                <img className="hero-card-img" src={item.imageUrl} alt={item.imageAlt ?? item.title} />
+              ) : (
+                <div className={`ph ${placeholderClass(index + 1)}`} style={{ minHeight: 210 }}>{placeholderIcon(index + 1)}</div>
+              )}
+              <div className="hero-card-overlay" />
+              <div className="hero-card-body">
+                {item.cuisine ? <div className="hero-card-badge">{item.cuisine}</div> : null}
+                <h3 className="hero-card-title">{item.title}</h3>
+              </div>
+            </a>
           ))}
         </div>
       </div>

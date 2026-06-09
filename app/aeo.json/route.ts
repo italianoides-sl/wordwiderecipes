@@ -1,9 +1,8 @@
 import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
+import { SITE_URL } from '@/lib/seo/site';
 import { safeISOString } from '@/lib/utils/date';
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +32,7 @@ const getAeoRows = unstable_cache(
 );
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${SITE_URL}/${row.type}/${row.slug}`;
 }
 
 export async function GET() {

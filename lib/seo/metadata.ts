@@ -1,16 +1,13 @@
 import type { Metadata } from 'next';
 import type { Content } from '@/lib/db/schema';
+import { AUTHOR_NAME, AUTHOR_URL, SITE_NAME, SITE_URL } from '@/lib/seo/site';
 
-const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
-  'https://worldwiderecipes.app',
-  'https://www.worldwiderecipes.app',
-);
 const DEFAULT_IMAGE = '/logo.png';
 
 export function buildMetadata(content: Content): Metadata {
   const title = content.metaTitle ?? content.title;
   const description = content.metaDescription ?? content.quickAnswer ?? 'WorldWideRecipes culinary article.';
-  const url = content.canonicalUrl ?? `${BASE_URL}/${content.type}/${content.slug}`;
+  const url = content.canonicalUrl ?? `${SITE_URL}/${content.type}/${content.slug}`;
   const image = content.ogImageUrl ?? content.imageUrl ?? DEFAULT_IMAGE;
 
   const bodyData = (content.body ?? {}) as Record<string, unknown>;
@@ -25,6 +22,9 @@ export function buildMetadata(content: Content): Metadata {
     title,
     description,
     keywords,
+    authors: [{ name: AUTHOR_NAME, url: AUTHOR_URL }],
+    creator: AUTHOR_NAME,
+    publisher: SITE_NAME,
     robots: {
       index: content.status === 'published',
       follow: true,
@@ -44,6 +44,10 @@ export function buildMetadata(content: Content): Metadata {
       description,
       url,
       type: 'article',
+      siteName: SITE_NAME,
+      publishedTime: content.publishedAt?.toISOString(),
+      modifiedTime: (content.updatedAt ?? content.publishedAt ?? undefined)?.toISOString(),
+      authors: [AUTHOR_NAME],
       images: [image],
     },
     twitter: {
@@ -61,16 +65,37 @@ export function buildPageMetadata(input: {
   path: string;
   image?: string;
 }): Metadata {
-  const url = `${BASE_URL}${input.path}`;
+  const url = `${SITE_URL}${input.path}`;
   return {
     title: input.title,
     description: input.description,
+    authors: [{ name: AUTHOR_NAME, url: AUTHOR_URL }],
+    creator: AUTHOR_NAME,
+    publisher: SITE_NAME,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
+      },
+    },
     alternates: { canonical: url },
     openGraph: {
       title: input.title,
       description: input.description,
       url,
       type: 'website',
+      siteName: SITE_NAME,
+      images: [input.image ?? DEFAULT_IMAGE],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: input.title,
+      description: input.description,
       images: [input.image ?? DEFAULT_IMAGE],
     },
   };

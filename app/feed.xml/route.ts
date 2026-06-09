@@ -1,7 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
 import { content, db } from '@/lib/db/schema';
-
-const baseUrl = 'https://worldwiderecipes.app';
+import { SITE_URL } from '@/lib/seo/site';
 
 function escapeXml(value: string) {
   return value
@@ -68,7 +67,7 @@ export async function GET() {
     .limit(100);
 
   const items = articles.map((article) => {
-    const url = `${baseUrl}/${article.type}/${article.slug}`;
+    const url = `${SITE_URL}/${article.type}/${article.slug}`;
     const date = article.publishedAt
       ? new Date(article.publishedAt).toUTCString()
       : new Date().toUTCString();
@@ -105,15 +104,15 @@ export async function GET() {
   xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>WorldWideRecipes — La cocina del mundo</title>
-    <link>${baseUrl}</link>
+    <link>${SITE_URL}</link>
     <description>Recetas internacionales, técnicas de cocina e ingredientes de todo el mundo en español.</description>
     <language>es</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    <atom:link href="${baseUrl}/feed.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml"/>
     <image>
-      <url>${baseUrl}/logo.png</url>
+      <url>${SITE_URL}/logo.png</url>
       <title>WorldWideRecipes</title>
-      <link>${baseUrl}</link>
+      <link>${SITE_URL}</link>
     </image>
     ${items}
   </channel>

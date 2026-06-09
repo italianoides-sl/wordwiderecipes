@@ -10,9 +10,9 @@ import type { Difficulty, FilterParams } from '@/lib/content/routes';
 
 const typeOptions: Array<{ label: string; value: ContentType }> = [
   { label: 'Receta', value: 'recipe' },
-  { label: 'Tecnica', value: 'technique' },
+  { label: 'Técnica', value: 'technique' },
+  { label: 'Guía', value: 'guide' },
   { label: 'Ingrediente', value: 'ingredient' },
-  { label: 'Guia', value: 'guide' },
   { label: 'Especia', value: 'spice' },
   { label: 'Cocina', value: 'cuisine' },
 ];
@@ -20,9 +20,9 @@ const typeOptions: Array<{ label: string; value: ContentType }> = [
 const dietOptions = ['vegano', 'vegetariano', 'sin-gluten', 'keto'];
 
 const difficultyOptions: Array<{ label: string; value: Difficulty }> = [
-  { label: 'Facil', value: 'easy' },
+  { label: 'Fácil', value: 'easy' },
   { label: 'Medio', value: 'medium' },
-  { label: 'Dificil', value: 'hard' },
+  { label: 'Difícil', value: 'hard' },
 ];
 
 function same(a?: string, b?: string) {
@@ -51,88 +51,82 @@ export default function FilterBar({ filters }: { filters: FilterParams }) {
   }
 
   return (
-    <div className="filter-bar wwr-filter-bar" aria-label="Filtros de contenido">
-      <form className="wwr-filter-search" onSubmit={handleSearch}>
-        <input
-          id="browse-search"
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar recetas, técnicas, ingredientes..."
-          aria-label="Buscar recetas, técnicas e ingredientes"
-        />
-        <button type="submit">Buscar</button>
-      </form>
+    <div className="filter-shell filter-shell-sticky" aria-label="Filtros de contenido">
+      <div className="filter-inner">
+        <form className="filter-search-row" onSubmit={handleSearch}>
+          <input
+            id="browse-search"
+            className="filter-input"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar recetas, técnicas, guías..."
+            aria-label="Buscar recetas, técnicas y guías"
+          />
+          <button className="filter-btn-search" type="submit">Buscar</button>
+        </form>
 
-      <div className="filter-group wwr-filter-row">
-        <span className="wwr-filter-label">Tipo</span>
-        {typeOptions.map((option) => (
-          <button
-            key={option.value}
-            className={`wwr-filter-pill${same(filters.type, option.value) ? ' active' : ''}`}
-            type="button"
-            data-active={same(filters.type, option.value) ? 'true' : undefined}
-            onClick={() => go({ ...filters, type: same(filters.type, option.value) ? undefined : option.value })}
-          >
-            {option.label}
-          </button>
-        ))}
+        <div className="filter-row">
+          <span className="filter-row-label">Tipo</span>
+          {typeOptions.map((option) => (
+            <button
+              key={option.value}
+              className={`filter-pill${same(filters.type, option.value) ? ' active' : ''}`}
+              type="button"
+              onClick={() => go({ ...filters, type: same(filters.type, option.value) ? undefined : option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="filter-row">
+          <span className="filter-row-label">País</span>
+          {cuisineCountries.map((country) => (
+            <button
+              key={country.slug}
+              className={`filter-pill${same(filters.country, country.slug) ? ' gold-active' : ''}`}
+              type="button"
+              onClick={() => go({
+                ...filters,
+                country: same(filters.country, country.slug) ? undefined : country.slug,
+                cuisine: same(filters.country, country.slug) ? undefined : country.cuisine,
+              })}
+            >
+              {country.name} {country.flag}
+            </button>
+          ))}
+        </div>
+
+        <div className="filter-row">
+          <span className="filter-row-label">Dieta</span>
+          {dietOptions.map((diet) => (
+            <button
+              key={diet}
+              className={`filter-pill${same(filters.diet, diet) ? ' active' : ''}`}
+              type="button"
+              onClick={() => go({ ...filters, diet: same(filters.diet, diet) ? undefined : diet })}
+            >
+              {diet.replace('-', ' ')}
+            </button>
+          ))}
+          {difficultyOptions.map((option) => (
+            <button
+              key={option.value}
+              className={`filter-pill${same(filters.difficulty, option.value) ? ' active' : ''}`}
+              type="button"
+              onClick={() => go({ ...filters, difficulty: same(filters.difficulty, option.value) ? undefined : option.value })}
+            >
+              {option.label}
+            </button>
+          ))}
+          {hasFilters ? (
+            <button className="filter-clear" type="button" onClick={() => go({})}>
+              Limpiar filtros ×
+            </button>
+          ) : null}
+        </div>
       </div>
-
-      <div className="filter-group wwr-filter-row">
-        <span className="wwr-filter-label">Pais</span>
-        {cuisineCountries.map((country) => (
-          <button
-            key={country.slug}
-            className={`wwr-filter-pill${same(filters.country, country.slug) ? ' active' : ''}`}
-            type="button"
-            data-active={same(filters.country, country.slug) ? 'true' : undefined}
-            onClick={() => go({
-              ...filters,
-              country: same(filters.country, country.slug) ? undefined : country.slug,
-              cuisine: same(filters.country, country.slug) ? undefined : country.cuisine,
-            })}
-          >
-            {country.name} {country.flag}
-          </button>
-        ))}
-      </div>
-
-      <div className="filter-group wwr-filter-row">
-        <span className="wwr-filter-label">Dieta</span>
-        {dietOptions.map((diet) => (
-          <button
-            key={diet}
-            className={`wwr-filter-pill${same(filters.diet, diet) ? ' active' : ''}`}
-            type="button"
-            data-active={same(filters.diet, diet) ? 'true' : undefined}
-            onClick={() => go({ ...filters, diet: same(filters.diet, diet) ? undefined : diet })}
-          >
-            {diet.replace('-', ' ')}
-          </button>
-        ))}
-      </div>
-
-      <div className="filter-group wwr-filter-row">
-        <span className="wwr-filter-label">Dificultad</span>
-        {difficultyOptions.map((option) => (
-          <button
-            key={option.value}
-            className={`wwr-filter-pill${same(filters.difficulty, option.value) ? ' active' : ''}`}
-            type="button"
-            data-active={same(filters.difficulty, option.value) ? 'true' : undefined}
-            onClick={() => go({ ...filters, difficulty: same(filters.difficulty, option.value) ? undefined : option.value })}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      {hasFilters ? (
-        <button className="filter-clear" type="button" onClick={() => go({})}>
-          Limpiar filtros
-        </button>
-      ) : null}
     </div>
   );
 }

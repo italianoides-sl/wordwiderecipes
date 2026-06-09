@@ -12,6 +12,7 @@ import { fetchArticleImages, type ContentImage } from '@/lib/images/unsplash';
 import { generateText } from '@/lib/ai/openai';
 import { indexUrlIndexNow } from '@/lib/seo/bing-indexing';
 import { indexUrl } from '@/lib/seo/google-indexing';
+import { SITE_URL } from '@/lib/seo/site';
 import { updateHomepageConfig } from '@/lib/homepage/config';
 import {
   getPublishedContentIndex,
@@ -38,7 +39,7 @@ type PipelineConfig = {
 };
 
 function getBaseUrl() {
-  return process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+  return SITE_URL;
 }
 
 function sitemapFileFor(type: string, locale: string) {
@@ -430,9 +431,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
         tiktokHashtags: finalDraft.tiktokHashtags,
         affiliateLinks: finalDraft.affiliateLinks,
         schemaRecipe: schemas.recipe ?? undefined,
-        schemaHowto: schemas.howto ?? undefined,
         schemaArticle: schemas.article,
-        schemaFaq: schemas.faq,
         schemaBreadcrumb: schemas.breadcrumb,
         faq: finalDraft.faq,
         qualityScore: quality.average.toFixed(1),

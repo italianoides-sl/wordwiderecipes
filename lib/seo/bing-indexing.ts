@@ -1,6 +1,8 @@
+import { SITE_URL } from '@/lib/seo/site';
+
 export async function indexUrlIndexNow(url: string): Promise<boolean> {
   const key = 'be4c0d58bb8b40a6a952c9070b9694c3'
-  const keyLocation = `https://worldwiderecipes.app/${key}.txt`
+  const keyLocation = `${SITE_URL}/${key}.txt`
 
   try {
     const makeRequest = () =>
@@ -8,7 +10,7 @@ export async function indexUrlIndexNow(url: string): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
-          host: 'worldwiderecipes.app',
+          host: new URL(SITE_URL).host,
           key,
           keyLocation,
           urlList: [url],
@@ -41,7 +43,7 @@ export async function indexBatchIndexNow(urls: string[]): Promise<{
   failed: number
 }> {
   const key = 'be4c0d58bb8b40a6a952c9070b9694c3'
-  const keyLocation = `https://worldwiderecipes.app/${key}.txt`
+  const keyLocation = `${SITE_URL}/${key}.txt`
 
   try {
     const makeRequest = () =>
@@ -49,7 +51,7 @@ export async function indexBatchIndexNow(urls: string[]): Promise<{
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
-          host: 'worldwiderecipes.app',
+          host: new URL(SITE_URL).host,
           key,
           keyLocation,
           urlList: urls.slice(0, 10000),

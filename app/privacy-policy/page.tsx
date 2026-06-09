@@ -27,9 +27,7 @@ export default function PrivacyPolicyPage() {
           <h2>Who we are</h2>
           <p>WorldWideRecipes is a culinary editorial platform available at worldwiderecipes.app, created by a professional chef based in Ibiza.</p>
           <h2>Data we collect</h2>
-          <p>We may collect technical data through Google Analytics (site performance), Google AdSense (advertising), Unsplash photo attribution data, and the email address you voluntarily provide to subscribe to our Brevo-powered newsletter.</p>
-          <h2>AI-assisted content generation</h2>
-          <p>Articles on this website are generated with OpenAI assistance. Generated content is processed by OpenAI servers for creation. Read OpenAI&apos;s privacy policy at <a href="https://openai.com/privacy" rel="nofollow" target="_blank">openai.com/privacy</a> for more information about data processing.</p>
+          <p>We may collect technical data through Google Analytics (site performance), Google AdSense (advertising), and the email address you voluntarily provide to subscribe to our Brevo-powered newsletter.</p>
           <h2>We do not sell personal data</h2>
           <p>We do not sell personal data to third parties. Technical providers (Google, Brevo, Neon, Vercel) process data only for the services they provide.</p>
           <h2>Google AdSense</h2>
@@ -56,9 +54,7 @@ export default function PrivacyPolicyPage() {
         <h2>Responsable</h2>
         <p>WorldWideRecipes, plataforma editorial de gastronomía disponible en worldwiderecipes.app, creada por un chef profesional con base en Ibiza, España.</p>
         <h2>Datos que recopilamos</h2>
-        <p>Podemos recopilar datos a través de cookies de Google Analytics (análisis de rendimiento), cookies de Google AdSense (publicidad), datos de atribución fotográfica de Unsplash, y el correo electrónico que facilites para nuestra newsletter gestionada con Brevo.</p>
-        <h2>Generación de contenido con IA</h2>
-        <p>Los artículos de esta web se generan con asistencia de OpenAI. El contenido generado es procesado por los servidores de OpenAI para su generación. Consulta la política de privacidad de OpenAI en <a href="https://openai.com/privacy" rel="nofollow" target="_blank">openai.com/privacy</a> para más información sobre el tratamiento de datos.</p>
+        <p>Podemos recopilar datos a través de cookies de Google Analytics (análisis de rendimiento), cookies de Google AdSense (publicidad), y el correo electrónico que facilites para nuestra newsletter gestionada con Brevo.</p>
         <h2>No vendemos datos personales</h2>
         <p>No vendemos datos personales a terceros. Los proveedores técnicos (Google, Brevo, Neon, Vercel) solo tratan datos para los servicios que prestan.</p>
         <h2>Google AdSense</h2>

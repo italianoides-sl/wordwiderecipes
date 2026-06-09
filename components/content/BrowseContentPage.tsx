@@ -19,38 +19,34 @@ export default async function BrowseContentPage({
   const hasFilters = Boolean(filters.type || filters.country || filters.diet || filters.difficulty);
 
   return (
-    <main className="wwr-page directory-page wwr-browse-page">
-      <header className="bp-header">
-        <div className="bp-bc">
+    <main className="article-shell">
+      <header className="content-section" style={{ paddingBottom: '24px' }}>
+        <div className="article-breadcrumb">
           <a href="/">Inicio</a>
-          <span aria-hidden="true">›</span>
+          <span className="article-breadcrumb-sep" aria-hidden="true">›</span>
           <span aria-current="page">Recetas</span>
         </div>
-        <h1 className="bp-h1">
+        <h1 className="section-title" style={{ marginBottom: '12px' }}>
           El <em>recetario</em> del mundo.
         </h1>
-        <p className="bp-lede">
+        <p className="related-title" style={{ marginBottom: 0 }}>
           Recetas, técnicas e ingredientes de cocinas que cruzan océanos. Filtra por país, tipo o dieta.
           {result.total > 0 && ` — ${result.total.toLocaleString('es-ES')} artículos publicados.`}
         </p>
       </header>
 
-      <div id="filter-bar" className="wwr-filter-sticky-shell">
-        <div className="wwr-filter-sticky-inner">
-          <FilterBar filters={filters} />
-        </div>
-      </div>
+      <FilterBar filters={filters} />
 
-      <div className="wwr-content-grid-shell">
+      <div className="content-section">
         {hasFilters && !result.results.length ? (
-          <section className="bp-empty">
-            <span className="bp-empty-eyebrow">Sin resultados</span>
+          <section>
+            <span className="related-title">Sin resultados</span>
             <h2>Nada coincide con esos filtros.</h2>
             <p>Prueba a quitar uno o explora <a href="/recipes">todas las recetas</a>.</p>
           </section>
         ) : !result.results.length ? (
-          <section className="bp-empty">
-            <span className="bp-empty-eyebrow">Próximamente</span>
+          <section>
+            <span className="related-title">Próximamente</span>
             <h2>Estamos generando contenido nuevo cada día.</h2>
             <p>Vuelve mañana — publicamos cada mañana a las 8:00.</p>
           </section>
@@ -60,7 +56,7 @@ export default async function BrowseContentPage({
       </div>
 
       {(page > 0 || result.hasMore) ? (
-        <nav className="pagination-nav" aria-label="Paginación">
+        <nav className="content-section" style={{ paddingTop: 0 }} aria-label="Paginación">
           {page > 0 ? <a href={`${filterHref(filters)}?page=${page - 1}`}>← Anterior</a> : null}
           {result.hasMore ? <a href={`${filterHref(filters)}?page=${page + 1}`}>Siguiente →</a> : null}
         </nav>

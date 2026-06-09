@@ -3,26 +3,34 @@ import Script from 'next/script';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CookieConsent from '@/components/ui/CookieConsent';
+import ConsentScripts from '@/components/ui/ConsentScripts';
+import {
+  AUTHOR_LOCATION,
+  AUTHOR_NAME,
+  AUTHOR_ROLE,
+  AUTHOR_URL,
+  LOGO_URL,
+  SITE_EMAIL,
+  SITE_NAME,
+  SITE_URL,
+  TIKTOK_URL,
+} from '@/lib/seo/site';
 import './globals.css';
 
-const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.worldwiderecipes.app').replace(
-  'https://worldwiderecipes.app',
-  'https://www.worldwiderecipes.app',
-);
-const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL ?? 'https://tiktok.com/@tuvirtualchef';
 const siteStructuredData = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'Organization',
-      '@id': `${baseUrl}/#organization`,
-      name: 'WorldWideRecipes',
-      url: baseUrl,
-      logo: `${baseUrl}/logo.png`,
-      sameAs: [tiktokUrl],
+      '@id': `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: LOGO_URL,
+      sameAs: [TIKTOK_URL],
+      founder: { '@id': `${AUTHOR_URL}#person` },
       contactPoint: {
         '@type': 'ContactPoint',
-        email: 'contact@worldwiderecipes.app',
+        email: SITE_EMAIL,
         contactType: 'editorial',
       },
       knowsAbout: [
@@ -35,15 +43,28 @@ const siteStructuredData = {
       ],
     },
     {
+      '@type': 'Person',
+      '@id': `${AUTHOR_URL}#person`,
+      name: AUTHOR_NAME,
+      url: AUTHOR_URL,
+      jobTitle: AUTHOR_ROLE,
+      homeLocation: {
+        '@type': 'Place',
+        name: AUTHOR_LOCATION,
+      },
+      worksFor: { '@id': `${SITE_URL}/#organization` },
+      sameAs: [TIKTOK_URL],
+    },
+    {
       '@type': 'WebSite',
-      '@id': `${baseUrl}/#website`,
-      url: baseUrl,
-      name: 'WorldWideRecipes',
-      publisher: { '@id': `${baseUrl}/#organization` },
-      inLanguage: ['es', 'es-MX', 'en'],
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      publisher: { '@id': `${SITE_URL}/#organization` },
+      inLanguage: ['es'],
       potentialAction: {
         '@type': 'SearchAction',
-        target: `${baseUrl}/search?q={search_term_string}`,
+        target: `${SITE_URL}/search?q={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
     },
@@ -51,14 +72,28 @@ const siteStructuredData = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
-  title: 'World Wide Recipes',
-  description: 'World gastronomy, recipes, techniques and ingredients in Spanish and English.',
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: SITE_NAME,
+  description: 'Recetas, tecnicas, ingredientes y guias de gastronomia mundial con criterio editorial y mirada de chef.',
+  alternates: {
+    canonical: SITE_URL,
+    types: {
+      'application/rss+xml': `${SITE_URL}/feed.xml`,
+    },
+  },
   openGraph: {
-    title: 'World Wide Recipes',
-    description: 'World gastronomy, recipes, techniques and ingredients in Spanish and English.',
+    title: SITE_NAME,
+    description: 'Recetas, tecnicas, ingredientes y guias de gastronomia mundial con criterio editorial y mirada de chef.',
     type: 'website',
-    url: baseUrl,
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    images: ['/logo.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_NAME,
+    description: 'Recetas, tecnicas, ingredientes y guias de gastronomia mundial con criterio editorial y mirada de chef.',
     images: ['/logo.png'],
   },
   manifest: '/site.webmanifest',
@@ -82,7 +117,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" style={{background:'var(--da-bg)',color:'var(--da-ink)'}}>
+    <html lang="es">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -90,7 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="alternate"
           type="application/rss+xml"
           title="WorldWideRecipes RSS"
-          href="https://worldwiderecipes.app/feed.xml"
+          href={`${SITE_URL}/feed.xml`}
         />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Neuton:ital,wght@0,200;0,300;0,400;0,700;0,800;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
         <Script id="google-tag-manager" strategy="afterInteractive">
@@ -106,35 +141,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteStructuredData) }}
         />
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-T70F1L4P1Y" strategy="afterInteractive" />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-T70F1L4P1Y');`}
-        </Script>
-        {process.env.NEXT_PUBLIC_ADSENSE_ID && (
-          <script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_ID}`}
-            crossOrigin="anonymous"
-          />
-        )}
       </head>
       <body>
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-WBZ5KRXW"
-            height="0"
-            width="0"
-            style={{ display: 'none', visibility: 'hidden' }}
-          />
-        </noscript>
         <div className="site-shell">
           <Header />
           {children}
           <Footer />
         </div>
+        <ConsentScripts />
         <CookieConsent />
       </body>
     </html>

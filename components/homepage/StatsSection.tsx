@@ -1,30 +1,22 @@
 export default function StatsSection({ totalCount }: { totalCount: number }) {
   return (
-    <section className="da-statbar">
-      <div className="da-statbar-grid">
-        <div className="da-stat">
-          <span className="da-stat-num">
-            {totalCount.toLocaleString('es-ES')}
-          </span>
-          <span className="da-stat-lbl">Páginas publicadas</span>
+    <section className="content-section" style={{ paddingTop: 0 }}>
+      <div className="hero-stats" style={{ borderTop: '1px solid var(--border-md)', paddingTop: '32px' }}>
+        <div>
+          <div className="hero-stat-num">{totalCount.toLocaleString('es-ES')}</div>
+          <div className="hero-stat-label">Páginas publicadas</div>
         </div>
-        <div className="da-stat">
-          <span className="da-stat-num">
-            6
-          </span>
-          <span className="da-stat-lbl">Tipos de contenido</span>
+        <div>
+          <div className="hero-stat-num">6</div>
+          <div className="hero-stat-label">Tipos</div>
         </div>
-        <div className="da-stat">
-          <span className="da-stat-num">
-            3
-          </span>
-          <span className="da-stat-lbl">Idiomas</span>
+        <div>
+          <div className="hero-stat-num">1</div>
+          <div className="hero-stat-label">Idioma raíz</div>
         </div>
-        <div className="da-stat">
-          <span className="da-stat-num">
-            24/7
-          </span>
-          <span className="da-stat-lbl">Publicaciones diarias</span>
+        <div>
+          <div className="hero-stat-num">24/7</div>
+          <div className="hero-stat-label">Publicación</div>
         </div>
       </div>
     </section>

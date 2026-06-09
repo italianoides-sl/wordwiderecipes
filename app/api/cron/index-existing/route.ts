@@ -1,8 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { content, db } from '@/lib/db/schema';
 import { indexBatch } from '@/lib/seo/google-indexing';
-
-const BASE_URL = 'https://worldwiderecipes.app';
+import { SITE_URL } from '@/lib/seo/site';
 
 export async function GET(req: Request) {
   const auth = req.headers.get('Authorization');
@@ -24,7 +23,7 @@ export async function GET(req: Request) {
     let failed = 0;
 
     for (const article of urlsToIndex) {
-      const url = `${BASE_URL}/${article.type}/${article.slug}`;
+      const url = `${SITE_URL}/${article.type}/${article.slug}`;
       const result = await indexBatch([url]);
 
       if (result.success === 1) {

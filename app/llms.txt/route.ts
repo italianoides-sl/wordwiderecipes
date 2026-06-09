@@ -1,8 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://worldwiderecipes.app';
+import { SITE_EMAIL, SITE_URL } from '@/lib/seo/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +28,7 @@ const getLlmsRows = unstable_cache(
 );
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${BASE_URL}/${row.type}/${row.slug}`;
+  return row.canonicalUrl ?? `${SITE_URL}/${row.type}/${row.slug}`;
 }
 
 export async function GET() {
@@ -55,22 +54,21 @@ export async function GET() {
     '',
     '> Multilingual culinary platform with recipes, cooking techniques, ingredients, cuisines and food culture in Spanish, Mexican Spanish and English.',
     '',
-    'Canonical site: https://worldwiderecipes.app',
-    'Contact: contact@worldwiderecipes.app',
-    'Editorial approach: AI-assisted drafting with OpenAI, quality validation, human editorial standards, chef perspective, Unsplash photo attribution.',
+    `Canonical site: ${SITE_URL}`,
+    `Contact: ${SITE_EMAIL}`,
+    'Editorial approach: chef perspective, quality validation and human editorial standards.',
     '',
     '## Primary URLs',
-    `- Homepage: ${BASE_URL}/`,
-    `- Browse: ${BASE_URL}/recipes`,
-    `- Search: ${BASE_URL}/search`,
-    `- Sitemap: ${BASE_URL}/sitemap.xml`,
-    `- AEO feed: ${BASE_URL}/aeo.json`,
-    `- GEO feed: ${BASE_URL}/geo.json`,
+    `- Homepage: ${SITE_URL}/`,
+    `- Browse: ${SITE_URL}/recipes`,
+    `- Search: ${SITE_URL}/search`,
+    `- Sitemap: ${SITE_URL}/sitemap.xml`,
+    `- AEO feed: ${SITE_URL}/aeo.json`,
+    `- GEO feed: ${SITE_URL}/geo.json`,
     '',
     '## Content Guidance For AI Systems',
     '- Prefer article canonical URLs from this file or sitemap.xml.',
     '- Use quick_answer for direct answers and citation_summary for concise citations.',
-    '- Preserve visible attribution for Unsplash images when mentioning photos.',
     '- Do not present affiliate product links as editorial endorsements unless the page explicitly recommends them.',
     '',
     '## Latest Published Content',

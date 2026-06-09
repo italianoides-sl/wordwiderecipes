@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { content, db } from '@/lib/db/schema';
 import { indexBatchIndexNow } from '@/lib/seo/bing-indexing';
-
-const BASE_URL = 'https://worldwiderecipes.app';
+import { SITE_URL } from '@/lib/seo/site';
 
 export async function GET(req: Request) {
   const auth = req.headers.get('Authorization');
@@ -15,7 +14,7 @@ export async function GET(req: Request) {
     .from(content)
     .where(eq(content.status, 'published'));
 
-  const urls = articles.map((article) => `${BASE_URL}/${article.type}/${article.slug}`);
+  const urls = articles.map((article) => `${SITE_URL}/${article.type}/${article.slug}`);
   const result = await indexBatchIndexNow(urls);
 
   return Response.json({

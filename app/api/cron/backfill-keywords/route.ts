@@ -74,7 +74,8 @@ Content excerpt: ${bodyText}`,
           ...(dietTags ? { dietTags } : {}),
           schemaRecipe: schemas.recipe ?? undefined,
           schemaArticle: schemas.article,
-          schemaFaq: schemas.faq,
+          schemaFaq: null,
+          schemaHowto: null,
           schemaBreadcrumb: schemas.breadcrumb,
         })
         .where(eq(content.id, article.id));

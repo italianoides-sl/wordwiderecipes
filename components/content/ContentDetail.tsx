@@ -2,7 +2,7 @@ import dynamic from 'next/dynamic';
 import BodyRenderer from './BodyRenderer';
 import ShareActions from './ShareActions';
 import TikTokCTA from '@/components/recipe/TikTokCTA';
-import { contentHref, countrySlugForCuisine, typeToFilterSegment } from '@/lib/content/routes';
+import { countrySlugForCuisine, typeToFilterSegment } from '@/lib/content/routes';
 import { buildSchemas } from '@/lib/content/schemas';
 import type { Content, ContentType } from '@/lib/db/schema';
 
@@ -40,24 +40,6 @@ function faqItems(content: Content) {
     .filter((item) => item.question && item.answer);
 }
 
-function imageAttribution(content: Content) {
-  if (!content.imageAttribution) return null;
-  const image = array<Record<string, unknown>>((content.body as Record<string, unknown> | undefined)?.images)[0];
-  const photographerName = text(image?.photographerName);
-  const photographerUrl = text(image?.photographerUrl);
-
-  if (photographerName && photographerUrl) {
-    return (
-      <figcaption className="rp-hero-caption">
-        Photo by <a href={photographerUrl} target="_blank" rel="noopener noreferrer">{photographerName}</a>{' '}
-        on <a href="https://unsplash.com/?utm_source=worldwiderecipes&utm_medium=referral" target="_blank" rel="noopener noreferrer">Unsplash</a>
-      </figcaption>
-    );
-  }
-
-  return <figcaption className="rp-hero-caption">{content.imageAttribution}</figcaption>;
-}
-
 function JsonLd({ id, data }: { id: string; data?: Record<string, unknown> | null }) {
   if (!data) return null;
   return (
@@ -79,50 +61,57 @@ export default function ContentDetail({ content, related }: { content: Content; 
   const faq = faqItems(content);
 
   return (
-    <main className="rp-shell">
+    <main className="article-shell">
       <JsonLd id={`schema-article-${content.id}`} data={schemas.article} />
       <JsonLd id={`schema-recipe-${content.id}`} data={schemas.recipe} />
-      <JsonLd id={`schema-faq-${content.id}`} data={schemas.faq} />
-      <JsonLd id={`schema-howto-${content.id}`} data={schemas.howto} />
       <JsonLd id={`schema-breadcrumb-${content.id}`} data={schemas.breadcrumb} />
 
-      <div className="rp-layout wwr-article-layout">
-        <article className="rp-main content-detail wwr-article-body">
-          <nav className="rp-breadcrumb" aria-label="Migas de pan">
-            <ol>
-              <li><a href="/">Inicio</a><span className="rp-bc-sep">›</span></li>
-              <li><a href={typeHref}>{content.type}</a><span className="rp-bc-sep">›</span></li>
-              {content.cuisine ? (
-                <li>
-                  {cuisineHref ? <a href={cuisineHref}>{content.cuisine}</a> : <span>{content.cuisine}</span>}
-                  <span className="rp-bc-sep">›</span>
-                </li>
-              ) : null}
-              <li><span aria-current="page">{content.title}</span></li>
-            </ol>
+      <div className="article-layout">
+        <article className="article-main">
+          <nav className="article-breadcrumb" aria-label="Migas de pan">
+            <a href="/">Inicio</a>
+            <span className="article-breadcrumb-sep">›</span>
+            <a href={typeHref}>{content.type}</a>
+            {content.cuisine ? (
+              <>
+                <span className="article-breadcrumb-sep">›</span>
+                {cuisineHref ? <a href={cuisineHref}>{content.cuisine}</a> : <span>{content.cuisine}</span>}
+              </>
+            ) : null}
+            <span className="article-breadcrumb-sep">›</span>
+            <span aria-current="page">{content.title}</span>
           </nav>
 
           {content.imageUrl ? (
-            <figure className="rp-hero">
-              <div className="rp-hero-frame wwr-article-hero">
+            <figure>
+              <div className="article-hero-img">
                 <img src={content.imageUrl} alt={content.imageAlt ?? content.title} />
               </div>
-              {imageAttribution(content)}
             </figure>
-          ) : <div className="image-skeleton rp-hero-frame wwr-article-hero" />}
+          ) : <div className="article-hero-img"><div className="ph ph-paella">🍽️</div></div>}
 
-          <header className="rp-title-block">
-            <div className="rp-badges">
-              {content.cuisine ? <span className="rp-badge rp-badge-cuisine">{content.cuisine}</span> : null}
-              {content.difficulty ? <span className="rp-badge rp-badge-diff">{content.difficulty}</span> : null}
-              {content.dietTags?.map((tag) => <span className="rp-badge rp-badge-diet" key={tag}>{tag}</span>)}
+          <header>
+            <div className="article-badges">
+              {content.cuisine ? <span className="badge badge-cuisine">{content.cuisine}</span> : null}
+              {content.difficulty ? <span className="badge badge-diff">{content.difficulty}</span> : null}
+              {content.dietTags?.map((tag) => <span className="badge badge-diet" key={tag}>{tag}</span>)}
             </div>
-            <h1 className="rp-title">{content.title}</h1>
-            <ul className="rp-meta-row" role="list">
-              {content.readingTimeMins ? <li>{content.readingTimeMins} min de lectura</li> : null}
-              {content.totalTimeMins ? <li>{content.totalTimeMins} min total</li> : null}
-              {content.difficulty ? <li>{content.difficulty}</li> : null}
-              <li><ShareActions title={content.title} /></li>
+            <h1 className="article-title">{content.title}</h1>
+            {(content.metaDescription ?? content.quickAnswer) ? (
+              <p className="article-subtitle">{content.metaDescription ?? content.quickAnswer}</p>
+            ) : null}
+            <div className="author-block">
+              <span style={{ width: '28px', height: '2px', background: 'var(--gold)', display: 'block', flexShrink: 0 }} aria-hidden="true" />
+              <div className="author-info">
+                <span className="author-name">Aleksandro Keci</span>
+                <span className="author-title">Chef Profesional · Ibiza, España</span>
+              </div>
+            </div>
+            <ul className="article-meta-row" role="list">
+              {content.readingTimeMins ? <li className="article-meta-item">⏱ {content.readingTimeMins} min lectura</li> : null}
+              {content.totalTimeMins ? <li className="article-meta-item">🔥 {content.totalTimeMins} min total</li> : null}
+              {content.difficulty ? <li className="article-meta-item">📊 {content.difficulty}</li> : null}
+              <li className="article-meta-item"><ShareActions title={content.title} /></li>
             </ul>
           </header>
 
@@ -181,27 +170,26 @@ export default function ContentDetail({ content, related }: { content: Content; 
             </section>
           ) : null}
 
+          <TikTokCTA hashtags={content.tiktokHashtags ?? []} />
+
           {related.length ? (
             <section className="related-section">
-              <h2>También te puede interesar</h2>
-              <div className="directory-grid">
-                {related.slice(0, 4).map((item) => (
-                  <a className="directory-card" href={contentHref(item)} key={item.id}>
-                    {item.imageUrl ? <img src={item.imageUrl} alt={item.imageAlt ?? item.title} /> : <span className="directory-card-fallback" />}
-                    <span className="directory-card-type">{item.type}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.metaDescription ?? item.quickAnswer}</p>
+              <p className="related-title">Si esto te ha gustado, también podría interesarte</p>
+              <div className="related-grid">
+                {related.slice(0, 2).map((article) => (
+                  <a href={`/${article.type}/${article.slug}`} className="related-card" key={article.id}>
+                    <div className="related-card-img">
+                      {article.imageUrl ? <img src={article.imageUrl} alt={article.imageAlt ?? article.title} /> : <div className="ph ph-tacos">🌮</div>}
+                    </div>
+                    <div className="related-card-body">
+                      <span className="related-card-type">{article.type}</span>
+                      <h4 className="related-card-title">{article.title}</h4>
+                    </div>
                   </a>
                 ))}
               </div>
             </section>
           ) : null}
-
-          <div className="wwr-ai-disclosure">
-            Artículo redactado con asistencia de OpenAI · Revisado editorialmente · Fotos: Unsplash
-          </div>
-
-          <TikTokCTA hashtags={content.tiktokHashtags ?? []} />
         </article>
 
         <Sidebar content={content} className="wwr-article-sidebar" />

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { buildSitemap, SITEMAP_FILES } from '@/lib/seo/sitemap-builder';
+import { SITE_URL } from '@/lib/seo/site';
 
 function authorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     urls += (xml.match(/<url>/g) ?? []).length;
   }
 
-  const sitemapUrl = 'https://worldwiderecipes.app/sitemap.xml';
+  const sitemapUrl = `${SITE_URL}/sitemap.xml`;
   await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`).catch((error) =>
     console.error('Google sitemap ping failed', error),
   );
