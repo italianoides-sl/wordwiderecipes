@@ -2,7 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
 import { SITE_URL } from '@/lib/seo/site';
-import { safeISOString } from '@/lib/utils/date';
+import { safeDate } from '@/lib/utils/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +43,7 @@ export async function GET() {
       {
         name: 'WorldWideRecipes AEO Feed',
         description: 'Machine-readable answer summaries for published culinary content.',
-        updated_at: new Date().toISOString(),
+        updated_at: safeDate(new Date()),
         count: rows.length,
         items: rows.map((row) => ({
           title: row.title,
@@ -55,7 +55,7 @@ export async function GET() {
           key_facts: row.keyFacts ?? [],
           faq: row.faq ?? [],
           entity_mentions: row.entityMentions ?? [],
-          updated_at: safeISOString(row.updatedAt) ?? null,
+          updated_at: safeDate(row.updatedAt) ?? null,
         })),
       },
       {
@@ -70,7 +70,7 @@ export async function GET() {
       {
         name: 'WorldWideRecipes AEO Feed',
         description: 'Machine-readable answer summaries for published culinary content.',
-        updated_at: new Date().toISOString(),
+        updated_at: safeDate(new Date()),
         count: 0,
         items: [],
       },

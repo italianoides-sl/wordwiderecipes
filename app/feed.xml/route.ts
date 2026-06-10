@@ -1,6 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { content, db } from '@/lib/db/schema';
 import { SITE_URL } from '@/lib/seo/site';
+import { safeDate } from '@/lib/utils/date';
 
 function escapeXml(value: string) {
   return value
@@ -68,9 +69,7 @@ export async function GET() {
 
   const items = articles.map((article) => {
     const url = `${SITE_URL}/${article.type}/${article.slug}`;
-    const date = article.publishedAt
-      ? new Date(article.publishedAt).toUTCString()
-      : new Date().toUTCString();
+    const date = new Date(safeDate(article.publishedAt)).toUTCString();
     const image = article.imageUrl?.trim() ?? '';
     const excerpt = getExcerpt(article);
     const keywords = getKeywords(article.body);
@@ -107,7 +106,7 @@ export async function GET() {
     <link>${SITE_URL}</link>
     <description>Recetas internacionales, técnicas de cocina e ingredientes de todo el mundo en español.</description>
     <language>es</language>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <lastBuildDate>${new Date(safeDate(new Date())).toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml"/>
     <image>
       <url>${SITE_URL}/logo.png</url>

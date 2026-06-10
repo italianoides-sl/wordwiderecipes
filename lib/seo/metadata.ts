@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { Content } from '@/lib/db/schema';
 import { AUTHOR_NAME, AUTHOR_URL, SITE_NAME, SITE_URL } from '@/lib/seo/site';
+import { safeDate } from '@/lib/utils/date';
 
 const DEFAULT_IMAGE = '/logo.png';
 
@@ -45,8 +46,8 @@ export function buildMetadata(content: Content): Metadata {
       url,
       type: 'article',
       siteName: SITE_NAME,
-      publishedTime: content.publishedAt?.toISOString(),
-      modifiedTime: (content.updatedAt ?? content.publishedAt ?? undefined)?.toISOString(),
+      publishedTime: safeDate(content.publishedAt),
+      modifiedTime: safeDate(content.updatedAt ?? content.publishedAt),
       authors: [AUTHOR_NAME],
       images: [image],
     },

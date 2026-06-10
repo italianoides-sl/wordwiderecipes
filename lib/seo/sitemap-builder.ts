@@ -2,6 +2,7 @@ import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
 import { SITE_URL } from '@/lib/seo/site';
+import { safeDate } from '@/lib/utils/date';
 
 const MAIN_SITEMAP_PAGE_SIZE = 200;
 
@@ -28,7 +29,7 @@ function contentUrl(row: { canonicalUrl: string | null; locale: string; type: st
 }
 
 function urlEntry(url: string, lastmod: Date | string | null | undefined) {
-  const modified = lastmod ? new Date(lastmod).toISOString() : new Date().toISOString();
+  const modified = safeDate(lastmod);
   return [
     '  <url>',
     `    <loc>${escapeXml(url)}</loc>`,
@@ -112,7 +113,7 @@ const getFilterPagesRows = unstable_cache(
 );
 
 export async function buildSitemapIndex(): Promise<string> {
-  const now = new Date().toISOString();
+  const now = safeDate(new Date());
   const entries = SITEMAP_FILES.map((file) => [
     '  <sitemap>',
     `    <loc>${escapeXml(`${SITE_URL}/${file}`)}</loc>`,
@@ -132,7 +133,7 @@ export async function buildMainSitemap(): Promise<string> {
   const rows = await getMainSitemapRows();
   const entries = mainSitemapEntries(rows);
   const pageCount = Math.max(1, Math.ceil(entries.length / MAIN_SITEMAP_PAGE_SIZE));
-  const now = new Date().toISOString();
+  const now = safeDate(new Date());
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

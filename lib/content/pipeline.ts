@@ -24,6 +24,7 @@ import { buildSchemas } from './schemas';
 import { detectMarketFromLocale, injectAffiliateLinks } from './affiliate-injector';
 import { generateContent } from './generator';
 import { computeInternalLinks } from './internal-linker';
+import { safeDate } from '@/lib/utils/date';
 import { validateContent } from './validator';
 import type { ContentDraft, QualityReport } from './types';
 
@@ -271,7 +272,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
           status: attempts < 2 ? 'running' : 'failed',
           attempts,
           error_message: `Generation attempt ${attempts} failed: ${err}`,
-          completed_at: attempts >= 2 ? new Date().toISOString() : undefined,
+          completed_at: attempts >= 2 ? safeDate(new Date()) : undefined,
           generation_ms: Date.now() - startedAt,
         });
         if (attempts >= 2) return { success: false, error: 'Content generation failed' };
@@ -293,7 +294,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
           status: 'failed',
           error_message: `Quality too low after ${attempts} attempts: ${quality.average}/10 (min ${minimumQuality})`,
           error_details: { quality },
-          completed_at: new Date().toISOString(),
+          completed_at: safeDate(new Date()),
           generation_ms: Date.now() - startedAt,
         });
         return { success: false, error: `Quality score ${quality.average} below threshold ${minimumQuality}` };
@@ -314,7 +315,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       await updateJob(job.id, {
         status: 'failed',
         error_message: `Duplicate draft detected: ${draft.title}`,
-        completed_at: new Date().toISOString(),
+        completed_at: safeDate(new Date()),
         generation_ms: Date.now() - startedAt,
       });
       return { success: false, error: 'Duplicate draft detected' };
@@ -390,7 +391,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       await updateJob(job.id, {
         status: 'failed',
         error_message: `DB duplicate caught at insert: ${finalDraft.title}`,
-        completed_at: new Date().toISOString(),
+        completed_at: safeDate(new Date()),
         generation_ms: Date.now() - startedAt,
       });
       return { success: false, error: 'DB duplicate caught at insert' };
@@ -525,7 +526,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
       quality_score: quality.average,
       image_generated: images.length >= 2,
       indexed,
-      completed_at: new Date().toISOString(),
+      completed_at: safeDate(new Date()),
       generation_ms: Date.now() - startedAt,
     });
 
@@ -535,7 +536,7 @@ export async function runContentPipeline(config: PipelineConfig): Promise<{ succ
     await updateJob(job.id, {
       status: 'failed',
       error_message: String(err),
-      completed_at: new Date().toISOString(),
+      completed_at: safeDate(new Date()),
       generation_ms: Date.now() - startedAt,
     });
     console.error(`Pipeline failed for "${config.topic}":`, err);

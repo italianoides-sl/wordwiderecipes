@@ -11,6 +11,7 @@ import {
 import { runContentPipeline } from '@/lib/content/pipeline';
 import { db, trendingTopics } from '@/lib/db/schema';
 import type { ContentType, Locale } from '@/lib/db/schema';
+import { safeDate } from '@/lib/utils/date';
 
 type Trend = {
   topic: string;
@@ -73,7 +74,7 @@ export async function GET(req: Request) {
 
     const trendsResponse = await generateJSON<Trend[] | TrendResponse>(`
 You are a culinary trend analyst for Spain and Latin America.
-Today: ${new Date().toISOString().split('T')[0]}
+Today: ${safeDate(new Date()).split('T')[0]}
 Primary market: Mexico. Secondary: Spain.
 
 NEVER suggest topics similar to these already published:
@@ -155,7 +156,7 @@ The trends array must contain exactly 15 items.
           affiliatePotential: trend.affiliate_potential,
           tiktokHashtags: trend.tiktok_hashtags,
           difficultyToRank: trend.difficulty_to_rank,
-          detectedDate: new Date().toISOString().split('T')[0],
+          detectedDate: safeDate(new Date()).split('T')[0],
           detectedAt: new Date(),
           selected: true,
         })

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface AdUnitProps {
   slot: string;
@@ -9,16 +9,24 @@ interface AdUnitProps {
 
 export default function AdUnit({ slot, format = 'auto', style }: AdUnitProps) {
   const publisherId = process.env.NEXT_PUBLIC_ADSENSE_ID;
+  const adRef = useRef<HTMLModElement | null>(null);
 
   useEffect(() => {
+    const el = adRef.current;
+
+    if (!el || !publisherId || el.dataset.checked) {
+      return;
+    }
+
+    el.dataset.checked = 'true';
+
     try {
-      if (typeof window !== 'undefined' && publisherId) {
-        const w = window as unknown as { adsbygoogle: unknown[] };
-        w.adsbygoogle = w.adsbygoogle || [];
-        w.adsbygoogle.push({});
+      if (typeof window !== 'undefined') {
+        const adsbygoogle = (window as Window & { adsbygoogle?: { push: (value: Record<string, never>) => void } }).adsbygoogle;
+        adsbygoogle?.push({});
       }
     } catch (err) {
-      console.error('AdSense error:', err);
+      console.warn('AdSense not ready:', err);
     }
   }, [publisherId]);
 
@@ -27,6 +35,7 @@ export default function AdUnit({ slot, format = 'auto', style }: AdUnitProps) {
   return (
     <div style={{ textAlign: 'center', overflow: 'hidden', ...style }}>
       <ins
+        ref={adRef}
         className="adsbygoogle"
         style={{ display: 'block' }}
         data-ad-client={publisherId}

@@ -1,5 +1,5 @@
 import type { Content } from '@/lib/db/schema';
-import { safeISOString } from '@/lib/utils/date';
+import { safeDate } from '@/lib/utils/date';
 import {
   AUTHOR_LOCATION,
   AUTHOR_NAME,
@@ -131,8 +131,8 @@ function baseFields(content: Content): Record<string, unknown> {
     image: buildImageField(content),
     author: buildAuthor(),
     publisher: buildPublisher(),
-    datePublished: safeISOString(content.publishedAt),
-    dateModified: safeISOString(content.updatedAt ?? content.publishedAt),
+    datePublished: safeDate(content.publishedAt),
+    dateModified: safeDate(content.updatedAt ?? content.publishedAt),
     inLanguage: content.locale ?? 'es',
     url: contentUrl(content),
   };

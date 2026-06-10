@@ -2,6 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 import { and, eq } from 'drizzle-orm';
 import { content, db, seoMetrics } from '@/lib/db/schema';
 import { getGoogleServiceAccountCredentials } from '@/lib/google/service-account';
+import { safeDate } from '@/lib/utils/date';
 
 type SearchConsoleRow = {
   keys?: string[];
@@ -14,7 +15,7 @@ type SearchConsoleRow = {
 function isoDate(daysAgo: number) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() - daysAgo);
-  return date.toISOString().slice(0, 10);
+  return safeDate(date).slice(0, 10);
 }
 
 function getAuth() {

@@ -50,6 +50,7 @@ body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  padding-top: 64px;
 }
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
@@ -98,10 +99,10 @@ a { color: inherit; text-decoration: none; }
 /* Push content below fixed nav */
 body > section:first-of-type,
 body > div:first-of-type {
-  margin-top: 64px;
+  margin-top: 0;
 }
 
-.hero { margin-top: 64px; }
+.hero { margin-top: 0; }
 
 .nav-inner {
   max-width: 1200px;
@@ -1723,6 +1724,29 @@ main {
   object-fit: cover;
 }
 
+.recipe-card,
+.wwr-content-card,
+.directory-card,
+.hero-card,
+.related-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.recipe-card-img-wrap,
+.wwr-card-image-wrap {
+  border-radius: 12px 12px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.wwr-stats-grid,
+[class*="stat-grid"],
+[class*="stats"] {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+}
+
 .recipe-card-excerpt {
   display: block;
   -webkit-line-clamp: unset;
@@ -1966,5 +1990,122 @@ main {
 
   .body-card-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── MOBILE FIXES ── */
+
+/* 1. Remove excessive top space on homepage */
+@media (max-width: 768px) {
+  .wwr-hero,
+  .hero,
+  section:first-of-type {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* 2. Stats grid — equal columns, wrap nicely */
+  .wwr-stats-grid,
+  [class*="stat-grid"],
+  [class*="stat"] {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+
+  /* 3. Remove right border/scrollbar */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  * {
+    max-width: 100% !important;
+  }
+
+  /* Fix any element causing horizontal overflow */
+  .wwr-hero-grid,
+  .hero-right,
+  .hero-inner,
+  [class*="grid"],
+  [class*="inner"],
+  [class*="section"] {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .wwr-stats-grid,
+  [class*="stat-grid"],
+  [class*="stats"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+html,
+body {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.site-shell,
+.wwr-page,
+.rp-shell,
+.da-home,
+main {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.hero-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 24px !important;
+}
+
+@media (max-width: 768px) {
+  .hero-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Nuclear option for overflow debug */
+@media (max-width: 768px) {
+  * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .recipe-card,
+  .wwr-content-card,
+  .directory-card,
+  .hero-card,
+  .related-card {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .recipe-card-img-wrap,
+  .wwr-card-image-wrap,
+  .related-card-img,
+  .directory-card img,
+  .directory-card .directory-card-fallback,
+  .hero-card img,
+  .hero-card .ph {
+    border-radius: 12px 12px 0 0 !important;
+    overflow: hidden !important;
+  }
+
+  .recipe-card-img-wrap img,
+  .related-card-img img,
+  .directory-card img,
+  .hero-card img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
   }
 }

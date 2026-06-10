@@ -2,7 +2,7 @@ import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
 import { SITE_URL } from '@/lib/seo/site';
-import { safeISOString } from '@/lib/utils/date';
+import { safeDate } from '@/lib/utils/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +45,7 @@ export async function GET() {
         name: 'WorldWideRecipes GEO Feed',
         description: 'Generative engine optimization feed with canonical culinary entities and citation-ready summaries.',
         site: SITE_URL,
-        updated_at: new Date().toISOString(),
+        updated_at: safeDate(new Date()),
         guidance: [
           'Use canonical_url when citing WorldWideRecipes.',
           'Use citation_summary for concise AI answers.',
@@ -61,8 +61,8 @@ export async function GET() {
           quick_answer: row.quickAnswer,
           citation_summary: row.citationSummary,
           entity_mentions: row.entityMentions ?? [],
-          published_at: safeISOString(row.publishedAt) ?? null,
-          updated_at: safeISOString(row.updatedAt) ?? null,
+          published_at: safeDate(row.publishedAt) ?? null,
+          updated_at: safeDate(row.updatedAt) ?? null,
         })),
       },
       {
@@ -78,7 +78,7 @@ export async function GET() {
         name: 'WorldWideRecipes GEO Feed',
         description: 'Generative engine optimization feed with canonical culinary entities and citation-ready summaries.',
         site: SITE_URL,
-        updated_at: new Date().toISOString(),
+        updated_at: safeDate(new Date()),
         guidance: [],
         entities: [],
       },
