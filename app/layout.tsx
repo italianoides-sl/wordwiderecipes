@@ -128,6 +128,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href={`${SITE_URL}/feed.xml`}
         />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Neuton:ital,wght@0,200;0,300;0,400;0,700;0,800;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+        <Script
+          id="wwr-adsense-src"
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4355591308121904"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

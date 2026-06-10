@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { Content } from '@/lib/db/schema';
-import { AUTHOR_NAME, AUTHOR_URL, SITE_NAME, SITE_URL } from '@/lib/seo/site';
+import { AUTHOR_NAME, AUTHOR_URL, SITE_NAME, SITE_URL, canonicalizeUrl } from '@/lib/seo/site';
 import { safeDate } from '@/lib/utils/date';
 
 const DEFAULT_IMAGE = '/logo.png';
@@ -8,7 +8,7 @@ const DEFAULT_IMAGE = '/logo.png';
 export function buildMetadata(content: Content): Metadata {
   const title = content.metaTitle ?? content.title;
   const description = content.metaDescription ?? content.quickAnswer ?? 'WorldWideRecipes culinary article.';
-  const url = content.canonicalUrl ?? `${SITE_URL}/${content.type}/${content.slug}`;
+  const url = canonicalizeUrl(content.canonicalUrl, `${SITE_URL}/${content.type}/${content.slug}`);
   const image = content.ogImageUrl ?? content.imageUrl ?? DEFAULT_IMAGE;
 
   const bodyData = (content.body ?? {}) as Record<string, unknown>;

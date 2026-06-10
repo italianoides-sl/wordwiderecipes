@@ -12,7 +12,7 @@ import { fetchArticleImages, type ContentImage } from '@/lib/images/unsplash';
 import { generateText } from '@/lib/ai/openai';
 import { indexUrlIndexNow } from '@/lib/seo/bing-indexing';
 import { indexUrl } from '@/lib/seo/google-indexing';
-import { SITE_URL } from '@/lib/seo/site';
+import { SITE_URL, canonicalizeUrl } from '@/lib/seo/site';
 import { updateHomepageConfig } from '@/lib/homepage/config';
 import {
   getPublishedContentIndex,
@@ -111,7 +111,7 @@ function draftToContentForSchemas(draft: ContentDraft): Content {
     title: draft.title,
     metaTitle: draft.metaTitle ?? null,
     metaDescription: draft.metaDescription ?? null,
-    canonicalUrl: draft.canonicalUrl ?? `${getBaseUrl()}/${draft.type}/${draft.slug}`,
+    canonicalUrl: canonicalizeUrl(draft.canonicalUrl, `${getBaseUrl()}/${draft.type}/${draft.slug}`),
     quickAnswer: draft.quickAnswer ?? null,
     definition: draft.definition ?? null,
     keyFacts: draft.keyFacts ?? null,

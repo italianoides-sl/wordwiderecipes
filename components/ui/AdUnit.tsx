@@ -12,22 +12,35 @@ export default function AdUnit({ slot, format = 'auto', style }: AdUnitProps) {
   const adRef = useRef<HTMLModElement | null>(null);
 
   useEffect(() => {
-    const el = adRef.current;
+    function tryLoadAd() {
+      const el = adRef.current;
 
-    if (!el || !publisherId || el.dataset.checked) {
-      return;
-    }
+      if (!el || !publisherId || el.dataset.checked) {
+        return;
+      }
 
-    el.dataset.checked = 'true';
+      if (typeof window === 'undefined' || localStorage.getItem('consent') !== 'full') {
+        return;
+      }
 
-    try {
-      if (typeof window !== 'undefined') {
+      el.dataset.checked = 'true';
+
+      try {
         const adsbygoogle = (window as Window & { adsbygoogle?: { push: (value: Record<string, never>) => void } }).adsbygoogle;
         adsbygoogle?.push({});
+      } catch (err) {
+        console.warn('AdSense not ready:', err);
       }
-    } catch (err) {
-      console.warn('AdSense not ready:', err);
     }
+
+    tryLoadAd();
+    window.addEventListener('wwr-consent-change', tryLoadAd);
+    window.addEventListener('storage', tryLoadAd);
+
+    return () => {
+      window.removeEventListener('wwr-consent-change', tryLoadAd);
+      window.removeEventListener('storage', tryLoadAd);
+    };
   }, [publisherId]);
 
   if (!publisherId) return null;

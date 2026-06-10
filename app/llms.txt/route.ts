@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db } from '@/lib/db/schema';
-import { SITE_EMAIL, SITE_URL } from '@/lib/seo/site';
+import { SITE_EMAIL, SITE_URL, canonicalizeUrl } from '@/lib/seo/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,7 @@ const getLlmsRows = unstable_cache(
 );
 
 function urlFor(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${SITE_URL}/${row.type}/${row.slug}`;
+  return canonicalizeUrl(row.canonicalUrl, `${SITE_URL}/${row.type}/${row.slug}`);
 }
 
 export async function GET() {

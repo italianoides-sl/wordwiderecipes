@@ -1,7 +1,7 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { content, db, type ContentType, type Locale } from '@/lib/db/schema';
-import { SITE_URL } from '@/lib/seo/site';
+import { SITE_URL, canonicalizeUrl } from '@/lib/seo/site';
 import { safeDate } from '@/lib/utils/date';
 
 const MAIN_SITEMAP_PAGE_SIZE = 200;
@@ -25,7 +25,7 @@ function escapeXml(value: string) {
 }
 
 function contentUrl(row: { canonicalUrl: string | null; locale: string; type: string; slug: string }) {
-  return row.canonicalUrl ?? `${SITE_URL}/${row.type}/${row.slug}`;
+  return canonicalizeUrl(row.canonicalUrl, `${SITE_URL}/${row.type}/${row.slug}`);
 }
 
 function urlEntry(url: string, lastmod: Date | string | null | undefined) {

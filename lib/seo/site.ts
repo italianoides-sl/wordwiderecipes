@@ -1,10 +1,23 @@
-const DEFAULT_SITE_URL = 'https://worldwiderecipes.app';
+const DEFAULT_SITE_URL = 'https://www.worldwiderecipes.app';
 
-function normalizeSiteUrl(url: string) {
-  return url
-    .trim()
-    .replace(/^https:\/\/www\./, 'https://')
-    .replace(/\/+$/, '');
+export function normalizeSiteUrl(url: string) {
+  const trimmed = url.trim();
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.hostname === 'worldwiderecipes.app') {
+      parsed.hostname = 'www.worldwiderecipes.app';
+    }
+    return parsed.toString().replace(/\/+$/, '');
+  } catch {
+    return trimmed.replace(/\/+$/, '');
+  }
+}
+
+export function canonicalizeUrl(url: string | null | undefined, fallback?: string) {
+  if (typeof url === 'string' && url.trim()) return normalizeSiteUrl(url);
+  if (fallback) return normalizeSiteUrl(fallback);
+  return SITE_URL;
 }
 
 export const SITE_NAME = 'WorldWideRecipes';

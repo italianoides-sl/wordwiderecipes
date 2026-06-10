@@ -9,6 +9,7 @@ import {
   SITE_NAME,
   SITE_URL,
   TIKTOK_URL,
+  canonicalizeUrl,
 } from '@/lib/seo/site';
 
 export type RecipeSchema = Record<string, unknown>;
@@ -52,7 +53,7 @@ function textFromObject(value: unknown): string {
 }
 
 function contentUrl(content: Content): string {
-  return safeUrl(content.canonicalUrl ?? `${SITE_URL}/${content.type}/${content.slug}`);
+  return safeUrl(canonicalizeUrl(content.canonicalUrl, `${SITE_URL}/${content.type}/${content.slug}`));
 }
 
 function buildAuthor(): Record<string, unknown> {
