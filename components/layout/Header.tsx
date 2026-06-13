@@ -3,12 +3,42 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
-const links = [
+type NavItem = {
+  label: string;
+  href: string;
+  dropdown?: { label: string; href: string }[];
+};
+
+const navItems: NavItem[] = [
   { label: 'Inicio', href: '/' },
   { label: '🌐 Explorar', href: '/recipes' },
-  { label: 'Recetas', href: '/recipes/tipo/receta' },
-  { label: 'Técnicas', href: '/recipes/tipo/tecnica' },
-  { label: 'Guías', href: '/recipes/tipo/guia' },
+  {
+    label: 'Recetas',
+    href: '/recipes/tipo/receta',
+    dropdown: [
+      { label: 'Por país', href: '/recipes/pais' },
+      { label: 'Por dieta', href: '/recipes/dieta' },
+      { label: 'Por dificultad', href: '/recipes/dificultad' },
+    ],
+  },
+  {
+    label: 'Técnicas',
+    href: '/recipes/tipo/tecnica',
+    dropdown: [
+      { label: 'Cocción', href: '/recipes/tipo/tecnica' },
+      { label: 'Preparación', href: '/recipes/tipo/tecnica' },
+      { label: 'Conservación', href: '/recipes/tipo/tecnica' },
+    ],
+  },
+  {
+    label: 'Guías',
+    href: '/recipes/tipo/guia',
+    dropdown: [
+      { label: 'Cocina profesional', href: '/recipes/tipo/guia' },
+      { label: 'Historia y cultura', href: '/recipes/tipo/guia' },
+      { label: 'Ingredientes', href: '/recipes/tipo/guia' },
+    ],
+  },
 ];
 
 export default function Header() {
@@ -75,11 +105,23 @@ export default function Header() {
           </Link>
 
           <ul className="nav-links">
-            {links.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className={`nav-link${isActive(link.href) ? ' active' : ''}`}>
-                  {link.label}
+            {navItems.map((item) => (
+              <li key={item.href} className={item.dropdown ? 'nav-has-dropdown' : undefined}>
+                <Link href={item.href} className={`nav-link${isActive(item.href) ? ' active' : ''}`}>
+                  {item.label}
+                  {item.dropdown ? <span className="nav-dropdown-arrow" aria-hidden="true">▾</span> : null}
                 </Link>
+                {item.dropdown ? (
+                  <ul className="nav-dropdown-menu" role="menu">
+                    {item.dropdown.map((sub) => (
+                      <li key={sub.label} role="none">
+                        <Link href={sub.href} className="nav-dropdown-item" role="menuitem">
+                          {sub.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </li>
             ))}
             <li>

@@ -12,15 +12,6 @@ const nextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: '/ads.txt',
-        destination: 'https://srv.adstxtmanager.com/19390/worldwiderecipes.app',
-        permanent: true,
-      },
-    ];
-  },
   async rewrites() {
     return [
       {

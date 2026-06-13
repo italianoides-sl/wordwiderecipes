@@ -8,6 +8,12 @@ import type { Content, ContentType } from '@/lib/db/schema';
 
 const Sidebar = dynamic(() => import('@/components/recipe/Sidebar'), { ssr: false, loading: () => null });
 
+function safeDate(val: unknown): string {
+  if (!val) return '';
+  const d = new Date(val as string);
+  return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+}
+
 function text(value: unknown): string {
   if (!value) return '';
   if (typeof value === 'string') return value;
@@ -107,6 +113,13 @@ export default function ContentDetail({ content, related }: { content: Content; 
                 <span className="author-title">Chef Profesional · Ibiza, España</span>
               </div>
             </div>
+            <time className="article-published-date" dateTime={safeDate(content.publishedAt)}>
+              Publicado el {new Date(content.publishedAt || Date.now()).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </time>
             <ul className="article-meta-row" role="list">
               {content.readingTimeMins ? <li className="article-meta-item">⏱ {content.readingTimeMins} min lectura</li> : null}
               {content.totalTimeMins ? <li className="article-meta-item">🔥 {content.totalTimeMins} min total</li> : null}

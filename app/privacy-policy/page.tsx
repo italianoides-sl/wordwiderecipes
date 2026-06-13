@@ -51,6 +51,51 @@ export default function PrivacyPolicyPage() {
         <p className="da-legal-kicker">Legal</p>
         <h1>Política de Privacidad</h1>
         <p className="da-legal-date">Última actualización: {year}</p>
+        <section className="privacy-section">
+          <h2>Servicios de Ezoic</h2>
+          <p>
+            Este sitio web utiliza los servicios de Ezoic Inc.
+            (&quot;Ezoic&quot;), incluyendo la gestión de publicidad
+            basada en intereses de terceros. Ezoic puede emplear
+            diversas tecnologías en este sitio web, incluyendo
+            herramientas para mostrar contenido, publicidad y
+            habilitar anuncios para los visitantes, que pueden
+            utilizar cookies propias y de terceros.
+          </p>
+          <p>
+            Una cookie es un pequeño archivo de texto enviado
+            a tu dispositivo que permite al sitio web recordar
+            información sobre tu actividad de navegación.
+            Ezoic y sus socios pueden colocar cookies de
+            terceros, etiquetas, balizas y tecnologías similares
+            para monitorear interacciones con anuncios y
+            optimizar la segmentación publicitaria.
+          </p>
+          <p>
+            La siguiente información puede ser recopilada,
+            usada y almacenada en una cookie al mostrar
+            anuncios personalizados:
+          </p>
+          <ul>
+            <li>Dirección IP</li>
+            <li>Tipo y versión del sistema operativo</li>
+            <li>Tipo de dispositivo</li>
+            <li>Preferencias de idioma</li>
+            <li>Tipo de navegador web</li>
+            <li>Email (en formato cifrado o hash)</li>
+          </ul>
+          <p>
+            Ezoic y sus socios pueden usar estos datos junto
+            con información recopilada de forma independiente
+            para mostrar publicidad segmentada. Puedes obtener
+            más información sobre cookies{' '}
+            <a href="https://allaboutcookies.org/" target="_blank" rel="noopener noreferrer">aquí</a>,
+            sobre publicidad basada en intereses{' '}
+            <a href="https://youradchoices.com/" target="_blank" rel="noopener noreferrer">aquí</a>,
+            y consultar la política de privacidad de Ezoic{' '}
+            <a href="https://ezoic.com/privacy/" target="_blank" rel="noopener noreferrer">aquí</a>.
+          </p>
+        </section>
         <h2>Responsable</h2>
         <p>WorldWideRecipes, plataforma editorial de gastronomía disponible en worldwiderecipes.app, creada por un chef profesional con base en Ibiza, España.</p>
         <h2>Datos que recopilamos</h2>
