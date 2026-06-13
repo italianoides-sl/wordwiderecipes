@@ -1,0 +1,35 @@
+{
+  "name": "white-sheet-codex-seo-starter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "bootstrap-content": "tsx scripts/bootstrap-content.ts",
+    "enrich-content": "tsx scripts/enrich-content.ts",
+    "add-keywords": "tsx scripts/add-keywords.ts",
+    "add-internal-links": "tsx scripts/add-internal-links.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "next": "^14.2.35",
+    "openai": "^6.38.0",
+    "postgres": "^3.4.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "postcss": "^8.4.47",
+    "tsx": "^4.22.4",
+    "typescript": "^5.6.3"
+  }
+}
